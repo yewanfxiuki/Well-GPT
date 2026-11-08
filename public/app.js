@@ -137,7 +137,7 @@ function setMode(m){
 }
 document.querySelectorAll('.segBtn').forEach(b=>{ b.onclick=()=>{ setMode(b.dataset.mode); els.input.focus(); }; });
 setMode(currentMode);
-document.querySelectorAll('.taskRow button').forEach(b=>{ b.onclick=()=>{ els.input.value=b.dataset.prompt; els.form.requestSubmit(); }; });
+document.querySelectorAll('.suggestGrid button').forEach(b=>{ b.onclick=()=>{ els.input.value=b.dataset.prompt; els.form.requestSubmit(); }; });
 
 function renderMarket(f){
   els.marketList.replaceChildren();

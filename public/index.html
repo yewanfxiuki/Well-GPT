@@ -46,13 +46,14 @@
 
     <section class="chatCol">
       <div class="empty" id="empty">
-        <h1>NEXUS AI CODE</h1>
+        <div class="emptyMark" aria-hidden="true">N</div>
+        <h1>What can I help you build?</h1>
         <p class="muted">Streaming · persistent · mobile + desktop</p>
-        <div class="taskRow">
-          <button type="button" data-prompt="Hello! What can you do?">What can you do?</button>
-          <button type="button" data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">Build a landing page</button>
-          <button type="button" data-prompt="Build a fullstack todo app with Node server and nice HTML UI">Build a fullstack app</button>
-          <button type="button" data-prompt="Explain how GitHub connect and Workspace work in 3 bullets">How does GitHub work?</button>
+        <div class="suggestGrid">
+          <button type="button" data-prompt="Hello! What can you do?"><b>What can you do?</b><span>Capabilities &amp; tips</span></button>
+          <button type="button" data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact"><b>Build a website</b><span>Landing page with preview</span></button>
+          <button type="button" data-prompt="Build a fullstack todo app with Node server and nice HTML UI"><b>Build a fullstack app</b><span>Node + UI scaffold</span></button>
+          <button type="button" data-prompt="Explain how GitHub connect and Workspace work in 3 bullets"><b>GitHub &amp; Workspace</b><span>Repos, files, checks</span></button>
         </div>
       </div>
       <div class="messages" id="messages" aria-live="polite"></div>
