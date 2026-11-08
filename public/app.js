@@ -1,6 +1,6 @@
 // NEXUS frontend — streaming chat, server persistence, safe markdown
 const $ = (id) => document.getElementById(id);
-const els = { model:$('model'), think:$('think'), modeSel:$('modeSel'), input:$('input'), form:$('form'),
+const els = { model:$('model'), think:$('think'), input:$('input'), form:$('form'),
  typing:$('typing'), chatList:$('chatList'), newChat:$('newChat'), menuBtn:$('menuBtn'), sidebar:$('sidebar'),
  search:$('search'), empty:$('empty'), messages:$('messages'), canvas:$('canvas'),
  tabPreview:$('tabPreview'), tabFiles:$('tabFiles'), panePreview:$('panePreview'), paneFiles:$('paneFiles'),
@@ -14,7 +14,17 @@ const els = { model:$('model'), think:$('think'), modeSel:$('modeSel'), input:$(
  wsBtn:$('wsBtn'), wsModal:$('wsModal'), wsOut:$('wsOut'), wsPath:$('wsPath'), wsContent:$('wsContent') };
 
 let device = localStorage.getItem('crouton-device');
-if (!device || !/^[a-zA-Z0-9-]{8,64}$/.test(device)) { device = 'd-' + crypto.randomUUID?.().replace(/-/g,'').slice(0,20) || ('d-'+Date.now().toString(36)+Math.random().toString(36).slice(2)); localStorage.setItem('crouton-device', device); }
+if (!device || !/^[a-zA-Z0-9-]{8,64}$/.test(device)) {
+  let suffix = 'x';
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+    else suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  } catch { suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+  device = 'd-' + suffix;
+  localStorage.setItem('crouton-device', device);
+}
+let currentMode = localStorage.getItem('nexus-mode') || 'chat';
+if (!['chat', 'build-website', 'build-fullstack'].includes(currentMode)) currentMode = 'chat';
 let chats = JSON.parse(localStorage.getItem('crouton-chats') || '[]');
 let currentId = localStorage.getItem('crouton-current') || null;
 let sending = false, lastCode = '', ghConnected = false, abortCtrl = null, CATALOG = [];
@@ -24,8 +34,12 @@ const MODEL_NAMES = { 'opencode/crouton-alpha-free':'Crouton Alpha Free ★','op
 if (localStorage.getItem('nexus-theme')==='light') document.documentElement.setAttribute('data-theme','light');
 els.themeBtn.onclick=()=>{ const l=document.documentElement.getAttribute('data-theme')==='light'; document.documentElement.setAttribute('data-theme', l?'':'light'); localStorage.setItem('nexus-theme', l?'':'light'); };
 
-// Model/mode persistence
-['model','think','modeSel'].forEach(id=>{ const k='nexus-'+id; const v=localStorage.getItem(k); if(v) els[id].value=v; els[id].addEventListener('change',()=>localStorage.setItem(k,els[id].value)); });
+// Model/think persistence (existing elements only)
+[['model','nexus-model'],['think','nexus-think']].forEach(([id,key])=>{
+  const el=els[id]; if(!el) return;
+  const v=localStorage.getItem(key); if(v) el.value=v;
+  el.addEventListener('change',()=>localStorage.setItem(key,el.value));
+});
 
 async function loadModels(){
   try{ const r=await fetch('/api/v1/models'); const d=await r.json(); CATALOG=d.catalog||[];
@@ -124,9 +138,13 @@ els.dlBtn.onclick=()=>{ if(!lastCode) return; const a=document.createElement('a'
 els.copyBtn.onclick=()=>{ if(lastCode) navigator.clipboard.writeText(lastCode); };
 
 const modeBtns=document.querySelectorAll('.segBtn');
-function setMode(m){ document.querySelectorAll('.segBtn').forEach(b=>b.classList.toggle('active',b.dataset.mode===m)); }
-modeBtns.forEach(b=>{ b.onclick=()=>{ setMode(b.dataset.mode); els.modeSel.value = b.dataset.mode==='build-website' ? 'build-website' : 'chat'; localStorage.setItem('nexus-modeSel',els.modeSel.value); els.input.focus(); }; });
-els.modeSel.onchange=()=>{ if(els.modeSel.value.startsWith('build')) setMode('build-website'); else setMode('chat'); };
+function setMode(m){
+  currentMode = (m==='build-website' || m==='build-fullstack') ? (m==='build-fullstack' ? 'build-fullstack' : 'build-website') : 'chat';
+  localStorage.setItem('nexus-mode', currentMode);
+  document.querySelectorAll('.segBtn').forEach(b=>b.classList.toggle('active',(b.dataset.mode==='build-website'&&currentMode.startsWith('build'))||(b.dataset.mode==='chat'&&currentMode==='chat')));
+}
+modeBtns.forEach(b=>{ b.onclick=()=>{ setMode(b.dataset.mode); els.input.focus(); }; });
+setMode(currentMode);
 document.querySelectorAll('.taskRow button').forEach(b=>{ b.onclick=()=>{ els.input.value=b.dataset.prompt; els.form.requestSubmit(); }; });
 
 // Marketplace
@@ -176,7 +194,7 @@ async function streamGenerate(userOverride){
   let full='';
   abortCtrl=new AbortController();
   try{
-    const r=await fetch('/api/v1/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},signal:abortCtrl.signal,body:JSON.stringify({messages:c.messages.map(m=>({role:m.role,content:m.content})),model:els.model.value,think:els.think.value,mode:els.modeSel.value})});
+    const r=await fetch('/api/v1/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},signal:abortCtrl.signal,body:JSON.stringify({messages:c.messages.map(m=>({role:m.role,content:m.content})),model:els.model.value,think:els.think.value,mode:currentMode})});
     if(!r.ok) throw new Error('Request failed '+r.status);
     const reader=r.body.getReader(); const dec=new TextDecoder(); let buf='';
     while(true){
