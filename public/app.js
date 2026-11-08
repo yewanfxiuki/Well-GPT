@@ -26,12 +26,46 @@ const MODEL_NAMES = {
   'opencode/glm-5.3-flash-free': 'GLM-5.3-Flash Free',
   'opencode/big-pickle': 'Big Pickle'
 };
+let CATALOG = [];
+const els2 = { marketModal:document.getElementById('marketModal'), marketList:document.getElementById('marketList'),
+  wsModal:document.getElementById('wsModal'), wsOut:document.getElementById('wsOut'), wsPath:document.getElementById('wsPath'),
+  wsContent:document.getElementById('wsContent'), usageToggle:document.getElementById('usageToggle'), usageBadge:document.getElementById('usageBadge'),
+  marketBtn:document.getElementById('marketBtn'), wsBtn:document.getElementById('wsBtn') };
 
 async function loadModels(){
-  try{ const r=await fetch('/api/models'); const d=await r.json();
+  try{ const r=await fetch('/api/v1/models'); const d=await r.json();
+    CATALOG = d.catalog || [];
     d.models.forEach(id=>{ const o=document.createElement('option'); o.value=id; o.textContent=MODEL_NAMES[id]||id; els.model.appendChild(o); });
     els.model.value='opencode/crouton-alpha-free';
+    renderMarket('all');
   }catch{ const o=document.createElement('option'); o.value='opencode/crouton-alpha-free'; o.textContent='Crouton Alpha Free ★'; els.model.appendChild(o); }
+}
+function renderMarket(f){
+  els2.marketList.replaceChildren();
+  const list = CATALOG.filter(m=> f==='all' || (f==='free'&&m.free) || (f==='coding'&&m.coding) || (f==='reasoning'&&m.reasoning));
+  list.forEach(m=>{
+    const btn=document.createElement('button'); btn.className='opt';
+    btn.textContent = `${MODEL_NAMES[m.id]||m.id} — ${m.provider} · ${m.free?'FREE':'Paid'} · ctx ${m.context} · ${m.availability}`;
+    btn.onclick=()=>{ els.model.value=m.id; els2.marketModal.hidden=true; };
+    els2.marketList.appendChild(btn);
+  });
+  document.querySelectorAll('.filter').forEach(b=>{ b.onclick=()=>{ document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderMarket(b.dataset.f); }; });
+}
+if(els2.marketBtn){ els2.marketBtn.onclick=()=>{ els2.marketModal.hidden=false; }; document.getElementById('closeMarket').onclick=()=>{ els2.marketModal.hidden=true; }; els2.marketModal.addEventListener('click',e=>{ if(e.target===els2.marketModal) els2.marketModal.hidden=true; }); }
+if(els2.wsBtn){
+  els2.wsBtn.onclick=()=>{ els2.wsModal.hidden=false; };
+  document.getElementById('closeWs').onclick=()=>{ els2.wsModal.hidden=true; };
+  document.getElementById('wsList').onclick=async()=>{ const r=await fetch('/api/v1/projects/workspace/list'); const d=await r.json().catch(()=>({})); els2.wsOut.textContent=JSON.stringify(d,null,2); };
+  document.getElementById('wsRead').onclick=async()=>{ const r=await fetch('/api/v1/projects/workspace/read?path='+encodeURIComponent(els2.wsPath.value)); const d=await r.json().catch(()=>({})); els2.wsOut.textContent=d.content||JSON.stringify(d); };
+  document.getElementById('wsWrite').onclick=async()=>{ const r=await fetch('/api/v1/projects/workspace/write',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:els2.wsPath.value,content:els2.wsContent.value})}); const d=await r.json().catch(()=>({})); els2.wsOut.textContent=JSON.stringify(d,null,2); };
+  document.getElementById('wsCheck').onclick=async()=>{ const r=await fetch('/api/v1/executions/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:els2.wsPath.value})}); const d=await r.json().catch(()=>({})); els2.wsOut.textContent=JSON.stringify(d,null,2); };
+}
+if(els2.usageToggle){
+  els2.usageToggle.onchange=async()=>{
+    const show=els2.usageToggle.checked;
+    els2.usageBadge.hidden=!show;
+    if(show){ try{ const r=await fetch('/api/v1/usage'); const d=await r.json(); els2.usageBadge.textContent=d.stats?` · req ${d.stats.chatRequests} · live ${d.stats.liveRequests}`:' · usage n/a'; }catch{ els2.usageBadge.textContent=' · usage n/a'; } }
+  };
 }
 async function loadGh(){ try{ const r=await fetch('/api/github/status'); const d=await r.json(); ghConnected=!!d.connected; els.ghBtn.textContent=ghConnected?'● GitHub':'◦ GitHub'; }catch{ els.ghBtn.textContent='◦ GitHub'; } }
 async function ensureGuest(){

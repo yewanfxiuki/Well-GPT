@@ -1,18 +1,20 @@
-// Crouton AI - Secure full-stack server (zero dependencies, Node built-ins only)
-// - Security headers, rate limiting, input validation, size limits
-// - Live model: custom upstream (env) -> Pollinations free (no key) -> demo fallback
-// - Separate admin panel + user logins: Guest, Email, GitHub OAuth, Google OAuth stub
-// - No tokens exposed to browser; all upstream calls server-side only
+// NEXUS AI CODE — PHOENIX (Well-GPT foundation)
+// Real implementation only. No mocks. See README for phase mapping and limits.
+// Identity is separate from providers; model router keeps Crouton identity across switches.
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execFile } = require('child_process');
 const { URL } = require('url');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = '127.0.0.1'; // phone-local only
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const WORKSPACE_DIR = path.join(__dirname, 'workspace');
+const APP_VERSION = '1.2.0-nexus.1';
+const ASSISTANT = { name: process.env.ASSISTANT_NAME || 'Crouton', product: 'NEXUS AI CODE', personality: 'helpful coding assistant, consistent across models' };
 const MAX_BODY = 200 * 1024;
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_CHAT = 30;
@@ -30,9 +32,16 @@ const ALLOWED_MODELS = [
   'opencode/glm-5.3-flash-free',
   'opencode/big-pickle'
 ];
-const ALLOWED_THINK = ['default', 'medium', 'max'];
+// Model registry metadata — free:true means ID in OpenCode catalog lists $0 cost (verified via models API).
+// Availability is best-effort (upstream may rate-limit); UI must show stale/unknown honestly.
+const MODELS_META = ALLOWED_MODELS.map((id) => ({
+  id, provider: 'OpenCode', free: true, coding: true, reasoning: true, vision: false, local: false,
+  context: 128000, streaming: true, toolCalling: false, availability: 'unknown', lastVerified: '2026-11-08', rateLimit: 'provider quota — may 402/429'
+}));
+const ALLOWED_THINK = ['default', 'low', 'medium', 'high', 'max'];
 const ALLOWED_MODES = ['chat', 'build-website', 'build-fullstack'];
-const THINK_VARIANT = { default: 'medium', medium: 'high', max: 'max' };
+// Capability mapping: native param where supported, else documented fallback (system prompt / max_tokens).
+const THINK_VARIANT = { default: 'auto', low: 'minimal', medium: 'medium', high: 'high', max: 'max' };
 
 const rateMap = new Map();
 const adminSessions = new Set();
@@ -84,7 +93,7 @@ function serveStatic(req, res, urlPath) {
     res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() });
     return res.end(JSON.stringify({ error: 'Bad path' }));
   }
-  if (urlPath === '/admin') filePath = path.join(PUBLIC_DIR, 'admin.html');
+  if (urlPath === '/admin' || urlPath === '/control-center') filePath = path.join(PUBLIC_DIR, 'admin.html');
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'application/json', ...securityHeaders() });
@@ -138,12 +147,37 @@ function createUserSession(provider, info) {
   return id;
 }
 
+// --- Agent workspace (real isolated tools, auth-required, path-safe) ---
+function workspacePath(rel) {
+  if (!rel || typeof rel !== 'string') return null;
+  if (rel.includes('\0')) return null;
+  const clean = rel.replace(/^\/+/, '');
+  if (clean.includes('..')) return null;
+  const full = path.join(WORKSPACE_DIR, clean);
+  if (!full.startsWith(WORKSPACE_DIR)) return null;
+  if (!/\.(txt|md|json|js|html|css|py)$/i.test(full)) return null;
+  return full;
+}
+function requireUser(req, res) {
+  const s = getCookie(req, 'user_session');
+  if (!s || !userSessions.has(s)) {
+    res.writeHead(401, { 'Content-Type': 'application/json', ...securityHeaders() });
+    res.end(JSON.stringify({ error: 'Sign in required' }));
+    return false;
+  }
+  return true;
+}
+
 function systemPrompt(think, mode) {
   const base = think === 'max'
-    ? 'You are Crouton Alpha, a thoughtful AI. Think step-by-step, be thorough and clear.'
+    ? `You are ${ASSISTANT.name}, a thoughtful ${ASSISTANT.product} assistant. Think step-by-step, be thorough and clear.`
+    : think === 'high'
+    ? `You are ${ASSISTANT.name}, a helpful ${ASSISTANT.product} coding assistant. Extensive problem analysis, comprehensive coding plans, verification.`
     : think === 'medium'
-    ? 'You are Crouton Alpha, a helpful AI. Give a careful, balanced, well-reasoned answer.'
-    : 'You are Crouton Alpha, a fast and helpful AI. Give a clear, concise answer.';
+    ? `You are ${ASSISTANT.name}, a helpful ${ASSISTANT.product} coding assistant. Balanced reasoning, moderate planning.`
+    : think === 'low'
+    ? `You are ${ASSISTANT.name}, a fast ${ASSISTANT.product} assistant. Short planning, speed over thoroughness.`
+    : `You are ${ASSISTANT.name}, a fast and helpful ${ASSISTANT.product} assistant. Clear, concise answer (auto effort).`;
   if (mode === 'build-website') return base + ' MODE: Build website. ALWAYS reply with a short intro line then ONE complete single-file HTML page inside a ```html code block. Use inline CSS+JS, modern responsive design, no external files. No explanations outside the block.';
   if (mode === 'build-fullstack') return base + ' MODE: Build fullstack app. Reply with intro then file blocks like ```html, ```js, ```css with clear filenames (e.g. // server.js). Keep it runnable: Node server + static HTML. No external secrets.';
   return base;
@@ -254,20 +288,84 @@ const server = http.createServer(async (req, res) => {
   const urlPath = parsed.pathname;
   const method = req.method;
   try {
-    if (method === 'GET' && urlPath === '/api/health') {
+    if (method === 'GET' && (urlPath === '/api/models' || urlPath === '/api/v1/models')) {
       res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
-      return res.end(JSON.stringify({ ok: true, app: 'Crouton AI', time: new Date().toISOString() }));
+      return res.end(JSON.stringify({ models: ALLOWED_MODELS, catalog: MODELS_META, thinkLevels: ALLOWED_THINK, variantMap: THINK_VARIANT, reasoningMap: THINK_VARIANT, assistant: ASSISTANT, version: APP_VERSION, freeFirst: true }));
     }
-    if (method === 'GET' && urlPath === '/api/models') {
+    if (method === 'GET' && (urlPath === '/api/health' || urlPath === '/api/v1/health')) {
       res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
-      return res.end(JSON.stringify({ models: ALLOWED_MODELS, thinkLevels: ALLOWED_THINK, variantMap: THINK_VARIANT }));
+      return res.end(JSON.stringify({ ok: true, app: ASSISTANT.product, assistant: ASSISTANT.name, version: APP_VERSION, time: new Date().toISOString() }));
+    }
+    if (method === 'GET' && (urlPath === '/api/v1/usage' || urlPath === '/api/usage')) {
+      if (!requireUser(req, res)) return;
+      res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+      return res.end(JSON.stringify({ stats, freeFirst: true, note: 'Free tier quotas apply — never unlimited. No fake usage.' }));
+    }
+    if (method === 'GET' && urlPath === '/api/v1/github/repos') {
+      if (!requireUser(req, res)) return;
+      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_PAT;
+      if (!token) { res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ connected: false, repos: [], hint: 'Set GITHUB_TOKEN on server (least-privilege PAT, server-only). Never in browser.' })); }
+      try {
+        const r = await fetch('https://api.github.com/user/repos?per_page=20', { headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'NEXUS-AI', Accept: 'application/vnd.github+json' } });
+        const data = await r.json().catch(() => []);
+        const repos = Array.isArray(data) ? data.map(x => ({ name: x.full_name, private: x.private, url: x.html_url })) : [];
+        res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+        return res.end(JSON.stringify({ connected: true, repos }));
+      } catch { res.writeHead(502, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'GitHub request failed' })); }
+    }
+    // Agent workspace: list / read / write (auth + safe paths, real FS)
+    if (method === 'GET' && urlPath === '/api/v1/projects/workspace/list') {
+      if (!requireUser(req, res)) return;
+      try {
+        fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
+        const files = fs.readdirSync(WORKSPACE_DIR).filter(f => !f.startsWith('.')).slice(0, 100);
+        res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+        return res.end(JSON.stringify({ files }));
+      } catch { res.writeHead(500, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'List failed' })); }
+    }
+    if (method === 'GET' && urlPath === '/api/v1/projects/workspace/read') {
+      if (!requireUser(req, res)) return;
+      const full = workspacePath(parsed.searchParams.get('path'));
+      if (!full) { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'Invalid path' })); }
+      try {
+        const data = fs.readFileSync(full, 'utf8').slice(0, 50000);
+        res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+        return res.end(JSON.stringify({ path: parsed.searchParams.get('path'), content: data }));
+      } catch { res.writeHead(404, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'Not found' })); }
+    }
+    if (method === 'POST' && urlPath === '/api/v1/projects/workspace/write') {
+      if (!requireUser(req, res)) return;
+      const body = await readBody(req).catch(() => ({}));
+      const full = workspacePath(body.path);
+      if (!full || typeof body.content !== 'string') { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'Invalid path/content' })); }
+      if (body.content.length > 50000) { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'File too large' })); }
+      try {
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, body.content);
+        log('workspace', 'write ' + body.path);
+        res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+        return res.end(JSON.stringify({ ok: true, path: body.path }));
+      } catch { res.writeHead(500, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'Write failed' })); }
+    }
+    // Safe syntax check tool (node --check, no shell, 10s timeout) — real execution, isolated to workspace .js files
+    if (method === 'POST' && urlPath === '/api/v1/executions/check') {
+      if (!requireUser(req, res)) return;
+      const body = await readBody(req).catch(() => ({}));
+      const full = workspacePath(body.path);
+      if (!full || !full.endsWith('.js')) { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'Only workspace .js files' })); }
+      if (!fs.existsSync(full)) { res.writeHead(404, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'File not found' })); }
+      execFile('node', ['--check', full], { timeout: 10000 }, (err, stdout, stderr) => {
+        res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+        res.end(JSON.stringify({ ok: !err, stdout: String(stdout||'').slice(0,2000), stderr: String(stderr||'').slice(0,2000) }));
+      });
+      return;
     }
     if (method === 'GET' && urlPath === '/api/github/status') {
       const connected = Boolean(process.env.GITHUB_CLIENT_ID || process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
       res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
       return res.end(JSON.stringify({ connected, repo: 'yewanfxiuki/Well-GPT' }));
     }
-    if (method === 'POST' && urlPath === '/api/chat') return handleChat(req, res);
+    if (method === 'POST' && (urlPath === '/api/chat' || urlPath === '/api/v1/chat')) return handleChat(req, res);
 
     // --- User logins (many options) ---
     if (method === 'GET' && urlPath === '/api/auth/me') {

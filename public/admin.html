@@ -1,28 +1,28 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Crouton AI - Admin panel</title><link rel="stylesheet" href="/style.css"/></head>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>NEXUS · Control Center (owner)</title><link rel="stylesheet" href="/style.css"/></head>
 <body>
-<header><div class="brand">🛡️ Admin <span>panel</span></div><div style="margin-left:auto"><a href="/">Back to chat</a></div></header>
-<main>
-  <div class="card" id="loginCard">
-    <h2>Admin login</h2>
-    <p style="color:#9ca3af">Separate protected panel. Password is set on the server via <code>ADMIN_PASSWORD</code> and never in this file.</p>
+<header class="topbar"><div class="logo">🛡️ NEXUS <b>Control Center</b></div><div class="topRight"><a class="ghChip" href="/">← Back to chat</a></div></header>
+<main style="max-width:900px;margin:0 auto;padding:18px">
+  <div class="card pad" id="loginCard">
+    <h2>Owner login</h2>
+    <p class="muted small">Separate private panel. Server-side auth via <code>ADMIN_PASSWORD</code> (httpOnly, short-lived). Hiding the route alone is NOT security — the API enforces it.</p>
     <form id="loginForm">
-      <input id="password" type="password" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password"/>
-      <button type="submit" style="width:100%;margin-top:8px">Login</button>
+      <input id="password" type="password" placeholder="Owner password" autocomplete="current-password" aria-label="Owner password"/>
+      <button type="submit" class="primary" style="width:100%;margin-top:8px">Login</button>
     </form>
     <p id="loginError" style="color:#f87171"></p>
   </div>
-  <div class="card" id="statsCard" style="display:none">
-    <h2>Health</h2>
+  <div class="card pad" id="statsCard" style="display:none">
+    <h2>System health</h2>
     <div id="stats"></div>
-    <h3>Security checklist</h3>
-    <ul style="color:#9ca3af;line-height:1.7">
-      <li>HTTPS in production, secrets only in server env</li>
-      <li>Rate limits and size limits enabled</li>
-      <li>No secrets or tokens in browser code</li>
-      <li>Keep Node and deps updated</li>
+    <h3>Security & ops</h3>
+    <ul class="muted small" style="line-height:1.7">
+      <li>HTTPS in production · secrets server-only · rate limits on</li>
+      <li>No default passwords · no backdoors · no secrets in logs</li>
+      <li>Free tier quotas respected — never promise unlimited</li>
+      <li>Model free status from catalog $0 + availability checks (honest)</li>
     </ul>
-    <button class="secondary" id="logout">Logout</button>
+    <button class="ghost" id="logout">Logout</button>
   </div>
 </main>
 <script src="/admin.js"></script>

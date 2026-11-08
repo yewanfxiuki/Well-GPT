@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="description" content="Well-GPT · Crouton Alpha — ChatGPT + OpenCode style AI that builds websites & fullstack apps"/>
-<title>Well-GPT · Chat</title>
+<meta name="description" content="NEXUS AI CODE · Crouton assistant — multi-model coding platform (ChatGPT + OpenCode style)"/>
+<title>NEXUS AI CODE · Chat</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>"/>
 <link rel="stylesheet" href="/style.css"/>
 </head>
@@ -12,14 +12,16 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sideTop">
-      <div class="logo">🍔 <b>Well-GPT</b><span class="ver">Crouton Alpha ★</span></div>
+      <div class="logo">🍔 <b>NEXUS AI CODE</b><span class="ver">Crouton ★</span></div>
       <button class="newChat" id="newChat">＋ New chat</button>
       <input id="search" placeholder="Search chats" aria-label="Search chats"/>
+      <button class="newChat" id="marketBtn">🛍️ Model marketplace</button>
+      <button class="newChat" id="wsBtn">📁 Workspace</button>
     </div>
     <nav class="chatList" id="chatList"></nav>
     <div class="sideBottom">
       <a class="sideLink" href="https://github.com/yewanfxiuki/Well-GPT" target="_blank" rel="noopener">🐙 GitHub repo</a>
-      <a class="sideLink" href="/admin">🛡️ Admin panel</a>
+      <a class="sideLink" href="/control-center">🛡️ Control Center (owner)</a>
       <div class="userCard" id="userCard">👤 Guest</div>
     </div>
   </aside>
@@ -39,14 +41,15 @@
 
     <div class="pickers">
       <select id="model" aria-label="Model"></select>
-      <select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select>
+      <select id="think" aria-label="Think level"><option value="default">Default · auto</option><option value="low">Low · fast</option><option value="medium">Medium · balanced</option><option value="high">High · deep</option><option value="max">Max · deepest</option></select>
       <select id="modeSel" aria-label="Build mode"><option value="chat">💬 Chat</option><option value="build-website">🌐 Build website</option><option value="build-fullstack">🛠️ Build fullstack</option></select>
       <button class="ghChip" id="ghBtn">◦ GitHub</button>
+      <label class="usageToggle"><input type="checkbox" id="usageToggle"/> <span>Usage</span></label>
     </div>
 
     <section class="chatCol">
       <div class="empty" id="empty">
-        <h1 id="emptyTitle">Put Well-GPT to work</h1>
+        <h1 id="emptyTitle">Put NEXUS to work</h1>
         <div class="taskRow" id="taskRow">
           <button data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">📍 <b>Build a website</b></button>
           <button data-prompt="Build a fullstack todo app with Node server and nice HTML UI">🛠️ <b>Build fullstack</b></button>
@@ -65,11 +68,11 @@
     <div class="composerWrap">
       <form class="composer" id="form">
         <button type="button" class="plusBtn" id="attachBtn" aria-label="New">＋</button>
-        <textarea id="input" rows="1" placeholder="Ask Well-GPT" aria-label="Message"></textarea>
+        <textarea id="input" rows="1" placeholder="Ask Crouton (NEXUS)…" aria-label="Message"></textarea>
         <button type="button" class="micBtn" id="micBtn" aria-label="Voice">🎤</button>
         <button type="submit" class="sendBtn" aria-label="Send">↑</button>
       </form>
-      <p class="fine">Crouton Alpha (C-R-O-U-T-O-N) AI can be wrong · <span id="netBadge">live</span></p>
+      <p class="fine">Crouton (C-R-O-U-T-O-N) · NEXUS AI CODE can be wrong · <span id="netBadge">live</span> <span id="usageBadge" hidden></span></p>
     </div>
   </main>
 
@@ -105,6 +108,28 @@
   <div class="modal card">
     <div class="modalHead"><h2>GitHub</h2><button class="circleBtn" id="closeGh">✕</button></div>
     <div id="ghBody"></div>
+  </div>
+</div>
+
+<div class="modalWrap" id="marketModal" hidden>
+  <div class="modal card wide">
+    <div class="modalHead"><h2>Model marketplace</h2><button class="circleBtn" id="closeMarket">✕</button></div>
+    <p class="muted small">Free-first · verified $0 IDs from OpenCode catalog. Availability is best-effort — quotas apply, never unlimited.</p>
+    <div class="filters" id="marketFilters">
+      <button class="filter active" data-f="all">All</button><button class="filter" data-f="free">Free</button>
+      <button class="filter" data-f="coding">Coding</button><button class="filter" data-f="reasoning">Reasoning</button>
+    </div>
+    <div id="marketList" class="marketList"></div>
+  </div>
+</div>
+
+<div class="modalWrap" id="wsModal" hidden>
+  <div class="modal card">
+    <div class="modalHead"><h2>Workspace (agent tools)</h2><button class="circleBtn" id="closeWs">✕</button></div>
+    <p class="muted small">Isolated <code>workspace/</code> folder · sign-in required · path-safe · 50KB max.</p>
+    <div class="row"><button class="ghost" id="wsList">List files</button><input id="wsPath" placeholder="file.js / note.md"/><button class="ghost" id="wsRead">Read</button></div>
+    <div class="row" style="margin-top:6px"><input id="wsContent" placeholder="new file content…"/><button class="primary" id="wsWrite">Write</button><button class="ghost" id="wsCheck">Check JS</button></div>
+    <pre id="wsOut" class="wsOut">—</pre>
   </div>
 </div>
 
