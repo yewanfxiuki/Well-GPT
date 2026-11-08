@@ -3,50 +3,74 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="description" content="Crouton AI - Your own AI app with Crouton Alpha Free and free models"/>
+<meta name="description" content="Crouton AI - Live chat with Crouton Alpha Free and all OpenCode free models"/>
 <title>Crouton AI - Chat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>"/>
 <link rel="stylesheet" href="/style.css"/>
 </head>
 <body>
-<header>
+<header class="topbar">
   <div class="brand">🍔 Crouton <span>AI</span></div>
-  <label style="display:flex;align-items:center;gap:6px">Model
-    <select id="model"></select>
-  </label>
-  <label style="display:flex;align-items:center;gap:6px">Think
-    <select id="think">
-      <option value="default">Default</option>
-      <option value="medium">Medium</option>
-      <option value="max">Max</option>
-    </select>
-  </label>
-  <div style="margin-left:auto;display:flex;gap:8px">
-    <button class="secondary" id="menuBtn">Chats</button>
-    <a href="/auth/github" role="button" class="secondary" style="text-decoration:none;padding:8px 10px;border-radius:10px;background:#1f2937;color:#e5e7eb;border:1px solid #1f2937">Sign in with GitHub</a>
-    <a href="/admin" style="padding:8px 10px">Admin panel</a>
+  <div class="controls">
+    <label class="picker"><span>Model</span><select id="model" aria-label="Model"></select></label>
+    <label class="picker"><span>Think</span><select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select></label>
+  </div>
+  <div class="top-actions">
+    <button class="ghost" id="themeBtn" title="Toggle light/dark">◐</button>
+    <button class="ghost" id="menuBtn">☰ Chats</button>
+    <span id="userChip" class="chip" hidden></span>
+    <button id="loginBtn" class="primary">Sign in</button>
+    <a class="adminLink" href="/admin">Admin</a>
   </div>
 </header>
 <div class="layout">
   <aside class="sidebar" id="sidebar">
-    <button id="newChat" style="width:100%">+ New chat</button>
+    <button id="newChat" class="primary block">+ New chat</button>
     <h3>Recent</h3>
-    <div id="chatList"></div>
-    <h3>Security</h3>
-    <p style="color:#9ca3af;font-size:13px;line-height:1.5">Server-side keys only, rate limits, and no code in the browser. See README for setup.</p>
+    <div id="chatList" class="chatList"></div>
+    <h3>Tips</h3>
+    <p class="muted small">Enter = send · Shift+Enter = new line<br/><br/>Live free replies (no key). Rate ~30s/IP on free tier — wait a few seconds between asks if busy.</p>
   </aside>
-  <main>
-    <div class="card" style="margin-bottom:12px">
-      <strong>Welcome to Crouton AI.</strong>
-      <div style="color:#9ca3af">Pick a free model and a think level (Default / Medium / Max), then ask anything. Chats stay in your browser.</div>
-    </div>
-    <div class="messages" id="messages"></div>
+  <main class="main">
+    <section class="hero card">
+      <h1>Ask anything. <span class="grad">Live.</span></h1>
+      <p class="muted">Crouton Alpha Free by default, every free model ready, think levels that match how deep you want it to go.</p>
+      <div class="pills"><span>Free</span><span>Live</span><span>No key needed</span><span>Server-side only</span></div>
+    </section>
+    <div class="messages" id="messages" aria-live="polite"></div>
     <div class="typing" id="typing"></div>
-    <form class="composer" id="form">
-      <textarea id="input" placeholder="Type your message… (Enter to send, Shift+Enter for new line)" aria-label="Message"></textarea>
-      <button type="submit">Send</button>
+    <form class="composer card" id="form">
+      <textarea id="input" rows="2" placeholder="Message Crouton AI…" aria-label="Message"></textarea>
+      <button type="submit" class="primary">Send →</button>
     </form>
+    <p class="muted center small">Crouton AI can be wrong. Server holds the keys — never in browser code.</p>
   </main>
 </div>
+
+<div class="modalWrap" id="loginModal" hidden>
+  <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modalHead">
+      <h2 id="loginTitle">Sign in to Well-GPT</h2>
+      <button class="ghost" id="closeLogin" aria-label="Close">✕</button>
+    </div>
+    <p class="muted small">Pick any option. Chats stay in this browser. No passwords stored.</p>
+    <div class="loginOpts">
+      <button class="opt primary" id="guestBtn">🙋 Continue as Guest<br/><span class="small">Instant, no account</span></button>
+      <a class="opt" href="/auth/github">🐙 Sign in with GitHub<br/><span class="small">Setup in README if not enabled</span></a>
+      <a class="opt" href="/auth/google">G &nbsp; Sign in with Google<br/><span class="small">Setup in README if not enabled</span></a>
+      <a class="opt" href="/admin">🛡️ Admin panel<br/><span class="small">Separate, password protected</span></a>
+    </div>
+    <form id="emailForm" class="emailForm">
+      <label for="email">Email magic link (demo)</label>
+      <div class="row">
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required/>
+        <button type="submit" class="primary">Sign in</button>
+      </div>
+      <p class="muted small" id="emailMsg"></p>
+    </form>
+  </div>
+</div>
+
 <script src="/app.js"></script>
 </body>
 </html>

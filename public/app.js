@@ -1,4 +1,4 @@
-// Crouton AI frontend - XSS-safe rendering (no innerHTML for user text)
+// Crouton AI frontend - XSS-safe, polished UX
 const els = {
   model: document.getElementById('model'),
   think: document.getElementById('think'),
@@ -9,7 +9,16 @@ const els = {
   chatList: document.getElementById('chatList'),
   newChat: document.getElementById('newChat'),
   menuBtn: document.getElementById('menuBtn'),
-  sidebar: document.getElementById('sidebar')
+  sidebar: document.getElementById('sidebar'),
+  loginBtn: document.getElementById('loginBtn'),
+  loginModal: document.getElementById('loginModal'),
+  closeLogin: document.getElementById('closeLogin'),
+  guestBtn: document.getElementById('guestBtn'),
+  emailForm: document.getElementById('emailForm'),
+  email: document.getElementById('email'),
+  emailMsg: document.getElementById('emailMsg'),
+  userChip: document.getElementById('userChip'),
+  themeBtn: document.getElementById('themeBtn')
 };
 
 let chats = JSON.parse(localStorage.getItem('crouton-chats') || '[]');
@@ -17,7 +26,7 @@ let currentId = localStorage.getItem('crouton-current') || null;
 let sending = false;
 
 const MODEL_NAMES = {
-  'opencode/crouton-alpha-free': 'Crouton Alpha Free',
+  'opencode/crouton-alpha-free': 'Crouton Alpha Free ★',
   'opencode/iceman-free': 'Iceman Free',
   'opencode/inkling-2-small-free': 'Inkling 2 Small Free',
   'opencode/flint-40b-free': 'Flint 40B Free',
@@ -27,6 +36,16 @@ const MODEL_NAMES = {
   'opencode/deepseek-v4.1-flash-free': 'DeepSeek V4.1 Flash Free',
   'opencode/glm-5.3-flash-free': 'GLM-5.3-Flash Free',
   'opencode/big-pickle': 'Big Pickle'
+};
+
+// Theme
+const savedTheme = localStorage.getItem('crouton-theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+els.themeBtn.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'light';
+  if (cur) document.documentElement.setAttribute('data-theme', cur);
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('crouton-theme', cur || 'dark');
 };
 
 async function loadModels() {
@@ -41,7 +60,10 @@ async function loadModels() {
     });
     if (data.models.includes('opencode/crouton-alpha-free')) els.model.value = 'opencode/crouton-alpha-free';
   } catch {
-    els.model.innerHTML = '<option value="opencode/crouton-alpha-free">Crouton Alpha Free</option>';
+    const opt = document.createElement('option');
+    opt.value = 'opencode/crouton-alpha-free';
+    opt.textContent = 'Crouton Alpha Free ★';
+    els.model.appendChild(opt);
   }
 }
 
@@ -51,9 +73,7 @@ function saveChats() {
   renderChatList();
 }
 
-function getCurrent() {
-  return chats.find(c => c.id === currentId) || null;
-}
+function getCurrent() { return chats.find(c => c.id === currentId) || null; }
 
 function renderChatList() {
   els.chatList.replaceChildren();
@@ -76,7 +96,15 @@ function addMsg(role, content, meta) {
   wrap.className = 'msg ' + role;
   const m = document.createElement('div');
   m.className = 'meta';
-  m.textContent = meta || (role === 'user' ? 'You' : 'Crouton AI');
+  const label = document.createElement('span');
+  label.textContent = meta || (role === 'user' ? 'You' : 'Crouton AI');
+  m.appendChild(label);
+  if (role === 'assistant') {
+    const copy = document.createElement('button');
+    copy.className = 'copy'; copy.type = 'button'; copy.textContent = 'Copy';
+    copy.onclick = () => navigator.clipboard.writeText(content);
+    m.appendChild(copy);
+  }
   const b = document.createElement('div');
   b.textContent = content;
   wrap.append(m, b);
@@ -89,18 +117,60 @@ function renderMessages() {
   els.messages.replaceChildren();
   const c = getCurrent();
   if (!c || c.messages.length === 0) {
-    addMsg('assistant', 'Hi! I\'m Crouton AI. Ask me anything — pick a model and think level above.', 'Crouton AI');
+    addMsg('assistant', 'Hi! I\'m Crouton AI — live, free, no key needed.\n\nPick a model and think level, then ask anything.', 'Crouton AI');
     return;
   }
-  c.messages.forEach(m => addMsg(m.role, m.content, m.role === 'user' ? 'You' : MODEL_NAMES[m.model] || 'Crouton AI'));
+  c.messages.forEach(m => addMsg(m.role, m.content, m.role === 'user' ? 'You' : MODEL_NAMES[m.model] || 'Crouton AI' ));
 }
+
+// Login modal + many options
+function openLogin() { els.loginModal.hidden = false; els.email.focus(); }
+function closeLogin() { els.loginModal.hidden = true; els.loginBtn.focus(); }
+els.loginBtn.onclick = openLogin;
+els.closeLogin.onclick = closeLogin;
+els.loginModal.addEventListener('click', (e) => { if (e.target === els.loginModal) closeLogin(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !els.loginModal.hidden) closeLogin(); });
+
+async function refreshUser() {
+  try {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (d.user) {
+      els.userChip.hidden = false;
+      els.userChip.textContent = `${d.user.provider === 'guest' ? '👤' : '●'} ${d.user.name || d.user.email || d.user.provider}`;
+      els.loginBtn.textContent = 'Sign out';
+    } else {
+      els.userChip.hidden = true;
+      els.loginBtn.textContent = 'Sign in';
+    }
+  } catch { /* offline */ }
+}
+els.loginBtn.onclick = async () => {
+  // If logged in, click = logout; else open modal
+  const chipVisible = !els.userChip.hidden;
+  if (chipVisible) {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    await refreshUser();
+  } else openLogin();
+};
+els.guestBtn.onclick = async () => {
+  els.emailMsg.textContent = 'Signing in as guest…';
+  const r = await fetch('/api/auth/guest', { method: 'POST' });
+  if (r.ok) { await refreshUser(); closeLogin(); } else els.emailMsg.textContent = 'Could not sign in. Try again.';
+};
+els.emailForm.onsubmit = async (e) => {
+  e.preventDefault();
+  els.emailMsg.textContent = 'Signing in…';
+  const r = await fetch('/api/auth/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: els.email.value.trim() }) });
+  const d = await r.json().catch(() => ({}));
+  if (r.ok) { await refreshUser(); closeLogin(); } else els.emailMsg.textContent = d.error || 'Sign-in failed';
+};
 
 els.newChat.onclick = () => {
   const id = Date.now().toString();
   chats.unshift({ id, title: 'New chat', messages: [] });
   currentId = id; saveChats(); renderMessages(); els.input.focus();
 };
-
 els.menuBtn.onclick = () => els.sidebar.classList.toggle('open');
 els.input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); els.form.requestSubmit(); }
@@ -112,7 +182,7 @@ els.form.onsubmit = async (e) => {
   if (!text || sending) return;
   sending = true;
   els.input.value = '';
-  els.typing.textContent = 'Thinking…';
+  els.typing.textContent = 'Thinking… (live)';
 
   let c = getCurrent();
   if (!c) {
@@ -124,7 +194,6 @@ els.form.onsubmit = async (e) => {
   if (c.title === 'New chat') c.title = text.slice(0, 40);
   saveChats(); renderMessages();
   addMsg('assistant', '…', 'Crouton AI');
-
   try {
     const r = await fetch('/api/chat', {
       method: 'POST',
@@ -133,8 +202,7 @@ els.form.onsubmit = async (e) => {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Request failed');
-    // Replace placeholder
-    els.messages.lastChild.remove();
+    els.messages.lastChild?.remove();
     const assistantText = data.reply || 'No reply.';
     c.messages.push({ role: 'assistant', content: assistantText, model: data.model });
     saveChats(); renderMessages();
@@ -150,5 +218,5 @@ els.form.onsubmit = async (e) => {
 
 loadModels().then(() => {
   if (!getCurrent() && chats.length > 0) currentId = chats[0].id;
-  saveChats(); renderMessages();
+  saveChats(); renderMessages(); refreshUser();
 });
