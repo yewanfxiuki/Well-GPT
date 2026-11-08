@@ -168,6 +168,46 @@ function requireUser(req, res) {
   return true;
 }
 
+// --- Server-side conversation persistence (device-keyed, survives restarts) ---
+const CONV_FILE = path.join(WORKSPACE_DIR, 'conversations.json');
+function validDevice(id) { return typeof id === 'string' && /^[a-zA-Z0-9-]{8,64}$/.test(id); }
+function loadConvos() {
+  try { fs.mkdirSync(WORKSPACE_DIR, { recursive: true }); const t = fs.readFileSync(CONV_FILE, 'utf8'); const j = JSON.parse(t); return j && typeof j === 'object' ? j : {}; } catch { return {}; }
+}
+function saveConvo(device, chats) {
+  const all = loadConvos();
+  // Validate + cap: max 50 chats, each max 100 messages, each content max 4000
+  const cleanChats = (Array.isArray(chats) ? chats : []).slice(0, 50).map(c => ({
+    id: String(c.id || Date.now()).slice(0, 64),
+    title: String(c.title || 'New chat').slice(0, 120),
+    messages: (Array.isArray(c.messages) ? c.messages : []).slice(-100).map(m => ({
+      role: ['user','assistant'].includes(m.role) ? m.role : 'user',
+      content: String(m.content || '').slice(0, 4000),
+      model: typeof m.model === 'string' ? m.model.slice(0, 64) : undefined
+    }))
+  }));
+  all[device] = { chats: cleanChats, updatedAt: Date.now() };
+  const json = JSON.stringify(all);
+  if (json.length > 500 * 1024) return false;
+  fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
+  fs.writeFileSync(CONV_FILE, json);
+  return true;
+}
+function localReply(clean, think, mode, model) {
+  const lastUser = [...clean].reverse().find(m => m.role === 'user')?.content || '';
+  const q = lastUser.toLowerCase();
+  const thinkNote = think === 'max' ? 'Deep thinking (Max).' : think === 'high' ? 'High thinking.' : think === 'medium' ? 'Medium thinking.' : think === 'low' ? 'Low thinking (fast).' : 'Default thinking.';
+  if (mode === 'build-website' || /build|landing|website|coffee|todo/.test(q)) {
+    const topic = lastUser.length < 80 ? lastUser : 'My Project';
+    const safe = topic.replace(/[<>&"']/g, '').slice(0, 60) || 'My Project';
+    return `${thinkNote} Here is a ready-to-preview site for “${safe}”.\n\n\`\`\`html\n<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe}</title><style>body{margin:0;font-family:system-ui;background:#0D0F12;color:#F1F3F5}nav{display:flex;justify-content:space-between;padding:16px 20px}nav b{font-size:18px}.hero{padding:70px 20px;text-align:center;background:#191D24}.hero h1{font-size:42px;margin:0 0 10px}.btn{background:#8B9CFF;color:#0D0F12;border:none;padding:12px 22px;border-radius:999px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;padding:20px}.card{background:#191D24;border:1px solid #252B35;border-radius:16px;padding:18px}footer{padding:20px;text-align:center;color:#929AA6}</style></head><body><nav><b>${safe.slice(0,30)}</b><span>Home · Work · Contact</span></nav><section class="hero"><h1>Welcome</h1><p>Built with NEXUS · Crouton · ${model}</p><button class="btn">Get started</button></section><section class="grid"><div class="card"><h3>Fast</h3><p>Live by default, no key needed.</p></div><div class="card"><h3>Beautiful</h3><p>Responsive on Android &amp; PC.</p></div><div class="card"><h3>Powerful</h3><p>Build websites &amp; fullstack apps.</p></div></section><footer>© 2026 ${safe.slice(0,30)}</footer><script>document.querySelector('.btn').onclick=()=>alert('Welcome!')</script></body></html>\n\`\`\`\n\nLive API busy (free tier ~30s). Template is instant — ask again for full live generation.`;
+  }
+  if (/^(hi|hello|hey|salam)/.test(q.trim())) return `${thinkNote}\n\nHello! I'm ${ASSISTANT.name}, your ${ASSISTANT.product} coding assistant.\n\nI can chat, build websites/fullstack apps (Mode selector), and connect to GitHub. What do you want to build?`;
+  if (/what.*(name|who.*you)|crouton/.test(q)) return `${thinkNote}\n\nI'm ${ASSISTANT.name} (C-R-O-U-T-O-N), the ${ASSISTANT.product} assistant. Identity stays consistent across models.\n\nModel: ${model} · Think: ${think} · Mode: ${mode}`;
+  if (/github|connect|repo/.test(q)) return `${thinkNote}\n\nGitHub: Guest/Email logins work instantly. For full OAuth, create an app at github.com → Settings → Developer settings → OAuth Apps, set Homepage http://127.0.0.1:3000 and Callback /auth/github/callback, then set GITHUB_CLIENT_ID/SECRET on the server.\n\nRepo: github.com/yewanfxiuki/Well-GPT`;
+  return `${thinkNote}\n\nYou asked: “${lastUser.slice(0,200)}”\n\nLive free API busy (rate limit ~30s) — instant fallback so you never hang. Try again in a few seconds for full live generation.\n\nTip: Default=auto, Low=fast, Medium=balanced, High=deep, Max=deepest.`;
+}
+
 function systemPrompt(think, mode) {
   const base = think === 'max'
     ? `You are ${ASSISTANT.name}, a thoughtful ${ASSISTANT.product} assistant. Think step-by-step, be thorough and clear.`
@@ -283,6 +323,102 @@ async function handleChat(req, res) {
   res.end(JSON.stringify({ reply, model, think, via: 'local' }));
 }
 
+// --- Streaming chat (SSE): real tokens, stop-safe, fallback streams local reply ---
+async function handleChatStream(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (rateLimited(ip, 'chat', RATE_LIMIT_CHAT)) {
+    res.writeHead(429, { 'Content-Type': 'application/json', ...securityHeaders() });
+    return res.end(JSON.stringify({ error: 'Too many requests, slow down.' }));
+  }
+  let body;
+  try { body = await readBody(req); } catch {
+    res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() });
+    return res.end(JSON.stringify({ error: 'Invalid request body' }));
+  }
+  const messages = Array.isArray(body.messages) ? body.messages.slice(-30) : [];
+  const model = ALLOWED_MODELS.includes(body.model) ? body.model : 'opencode/crouton-alpha-free';
+  const think = ALLOWED_THINK.includes(body.think) ? body.think : 'default';
+  const mode = ALLOWED_MODES.includes(body.mode) ? body.mode : 'chat';
+  const clean = [];
+  for (const m of messages) {
+    if (!m || typeof m.content !== 'string') continue;
+    if (!['user','assistant','system'].includes(m.role)) continue;
+    clean.push({ role: m.role, content: m.content.slice(0, 4000) });
+  }
+  if (clean.length === 0) {
+    res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() });
+    return res.end(JSON.stringify({ error: 'messages required' }));
+  }
+  stats.chatRequests++;
+  const liveMessages = [{ role: 'system', content: systemPrompt(think, mode) }, ...clean];
+  const base = process.env.OPENCODE_API_BASE, key = process.env.OPENCODE_API_KEY;
+  let via = 'local', upstream = null, upstreamModel = null;
+  if (base && key) { upstream = `${base.replace(/\/$/, '')}/chat/completions`; upstreamModel = model.replace(/^opencode\//, ''); }
+  else { upstream = 'https://text.pollinations.ai/openai'; upstreamModel = 'openai-fast'; }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+    ...securityHeaders()
+  });
+  const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch {} };
+  let closed = false;
+  req.on('close', () => { closed = true; });
+  let full = '';
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    // Fire request; if first byte not seen in 15s, abort to fallback
+    const resp = await fetch(upstream, {
+      method: 'POST',
+      headers: base && key ? { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` } : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: upstreamModel, messages: liveMessages, stream: true, temperature: 0.7, max_tokens: think === 'max' ? 2048 : 1024 }),
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    if (!resp.ok) throw new Error('provider ' + resp.status);
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      if (closed) break;
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        const s = line.trim();
+        if (!s.startsWith('data:')) continue;
+        const data = s.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const j = JSON.parse(data);
+          const tok = j.choices?.[0]?.delta?.content || j.choices?.[0]?.message?.content || '';
+          if (tok) { full += tok; send({ token: tok }); }
+        } catch {}
+      }
+    }
+    if (full) { via = base && key ? 'upstream' : 'live'; stats.liveRequests++; }
+    if (!full) throw new Error('empty stream');
+  } catch { /* fallback to local */ }
+  if (!full) {
+    via = 'local';
+    full = localReply(clean, think, mode, model);
+    // Stream fallback word-by-word so UI streams too (20ms/word)
+    const words = full.split(/(?<=\s)/);
+    for (const w of words) {
+      if (closed) break;
+      send({ token: w });
+      await new Promise(r => setTimeout(r, 12));
+    }
+  }
+  if (!closed) send({ done: true, via, model, think, reply: full });
+  try { res.end(); } catch {}
+}
+
 const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host}`);
   const urlPath = parsed.pathname;
@@ -366,6 +502,21 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ connected, repo: 'yewanfxiuki/Well-GPT' }));
     }
     if (method === 'POST' && (urlPath === '/api/chat' || urlPath === '/api/v1/chat')) return handleChat(req, res);
+    if (method === 'POST' && (urlPath === '/api/chat/stream' || urlPath === '/api/v1/chat/stream')) return handleChatStream(req, res);
+    if (method === 'GET' && urlPath === '/api/v1/conversations') {
+      const device = parsed.searchParams.get('device');
+      if (!validDevice(device)) { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'valid device required' })); }
+      const all = loadConvos();
+      res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+      return res.end(JSON.stringify({ chats: all[device]?.chats || [] }));
+    }
+    if (method === 'POST' && urlPath === '/api/v1/conversations') {
+      const body = await readBody(req).catch(() => ({}));
+      if (!validDevice(body.device)) { res.writeHead(400, { 'Content-Type': 'application/json', ...securityHeaders() }); return res.end(JSON.stringify({ error: 'valid device required' })); }
+      const ok = saveConvo(body.device, body.chats);
+      res.writeHead(ok ? 200 : 400, { 'Content-Type': 'application/json', ...securityHeaders() });
+      return res.end(JSON.stringify(ok ? { ok: true } : { error: 'too large or invalid' }));
+    }
 
     // --- User logins (many options) ---
     if (method === 'GET' && urlPath === '/api/auth/me') {
