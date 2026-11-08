@@ -3,86 +3,352 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>NEXUS AI CODE · Chat</title>
-<meta name="description" content="NEXUS AI CODE — multi-model coding assistant"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238b9cff'/><text x='16' y='21' text-anchor='middle' font-size='14' font-weight='700' fill='%230D0F12'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css"/>
+<title>NEXUS AI CODE</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#fff;--sb:#f7f7f8;--cp:#f0f0f3;--tx:#1a1a1a;--mt:#6b6b76;--bd:#e3e3e8;--ac:#4a5bd4;--at:#fff;--er:#c62828;--ca:#f6f6f8;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#171717;--sb:#1a1a1a;--cp:#2b2b2b;--tx:#ececec;--mt:#9d9da8;--bd:#313131;--ac:#8b9cff;--at:#12141f;--er:#ff8a80;--ca:#1f1f1f;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#171717;--sb:#1a1a1a;--cp:#2b2b2b;--tx:#ececec;--mt:#9d9da8;--bd:#313131;--ac:#8b9cff;--at:#12141f;--er:#ff8a80;--ca:#1f1f1f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+#app{display:flex;height:100%}
+.side{width:260px;flex:none;background:var(--sb);border-right:1px solid var(--bd);display:flex;flex-direction:column;margin-left:-260px;transition:margin .2s;z-index:30}
+body.sb .side{margin-left:0}
+.logo{padding:16px;font-weight:600;font-size:14px;letter-spacing:.08em}
+.sp{padding:0 8px 8px;display:flex;flex-direction:column;gap:8px}
+.list{flex:1;overflow:auto;padding:0 8px}
+.ci{display:flex;align-items:center;border-radius:8px;padding:0 4px 0 8px;font-size:14px;cursor:pointer;transition:background .15s}
+.ci:hover,.ci.on{background:var(--cp)}
+.ci span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 0}
+.ci .x{border:0;background:none;color:var(--mt);padding:4px 8px;border-radius:6px;font-size:12px;opacity:0}
+.ci:hover .x,.ci .x:focus{opacity:1}
+.foot{display:flex;gap:8px;align-items:center;padding:8px;border-top:1px solid var(--bd)}
+.usr{flex:1;display:flex;align-items:center;gap:8px;background:none;border:0;text-align:left;padding:4px;border-radius:8px;min-width:0;font-size:14px}
+.usr:hover{background:var(--cp)}
+.av{width:28px;height:28px;border-radius:50%;background:var(--ac);color:var(--at);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:0;flex:none}
+.main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.seg{display:flex;background:var(--cp);border-radius:8px;padding:2px;margin:0 auto}
+.seg button{border:0;background:none;padding:4px 16px;border-radius:6px;font-size:13px;color:var(--mt)}
+.seg .on{background:var(--bg);color:var(--tx);box-shadow:0 0 0 1px var(--bd)}
+.acts{display:flex;gap:8px}
+.btn{background:none;border:1px solid var(--bd);border-radius:8px;padding:4px 12px;font-size:13px;transition:background .15s,border-color .15s;white-space:nowrap}
+.btn:hover{background:var(--cp)}.btn:disabled{opacity:.6;cursor:default}
+.btn.p{background:var(--ac);border-color:var(--ac);color:var(--at);font-weight:500}.btn.p:hover{opacity:.9}
+.btn[aria-pressed=true]{border-color:var(--ac);color:var(--ac)}
+.w{width:100%;padding:8px}
+.in{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;font-size:14px;width:100%}
+.sm{width:auto;padding:4px 8px;font-size:13px}
+.tool{display:flex;align-items:center;gap:8px;padding:8px 16px;flex-wrap:wrap}
+.mt{color:var(--mt);font-size:13px}
+.chat{flex:1;overflow:auto;min-height:0}
+.col{max-width:768px;margin:0 auto;padding:16px}
+.est{padding:8vh 0 0;text-align:center}
+.est h1{font-size:28px;line-height:36px;font-weight:600;margin:0 0 32px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left}
+.card{display:flex;flex-direction:column;gap:4px;padding:16px;background:none;border:1px solid var(--bd);border-radius:12px;text-align:left;transition:background .15s}
+.card:hover{background:var(--cp)}.card b{font-weight:500;font-size:14px}.card span{color:var(--mt);font-size:13px;line-height:1.4}
+.empty{color:var(--mt);font-size:13px;padding:16px;text-align:center}
+.m{margin:24px 0}
+.m.u{display:flex;flex-direction:column;align-items:flex-end}
+.m.u .b{background:var(--cp);border-radius:16px;padding:8px 16px;max-width:85%;white-space:pre-wrap;word-break:break-word}
+.m.u textarea{width:100%}
+.who{font-size:13px;font-weight:600;margin-bottom:4px}
+.act{display:flex;gap:4px;opacity:0;transition:opacity .15s;margin-top:4px}
+.m:hover .act,.m:focus-within .act{opacity:1}
+@media(hover:none){.act,.ci .x{opacity:.85}}
+.act button{font-size:12px;color:var(--mt);background:none;border:0;padding:4px 8px;border-radius:6px}.act button:hover{background:var(--cp)}
+.md{word-break:break-word}.md p,.md ul,.md ol{margin:0 0 16px}.md ul,.md ol{padding-left:24px}
+.md h3,.md h4,.md h5,.md h6{margin:24px 0 8px;line-height:1.3}.md h3{font-size:18px}.md h4{font-size:16px}.md h5,.md h6{font-size:15px}
+.md code{background:var(--cp);padding:1px 6px;border-radius:6px;font-size:13px}.md a{color:var(--ac)}
+.cb{border:1px solid var(--bd);border-radius:8px;margin:16px 0;overflow:hidden;background:var(--ca)}
+.md .cb code{background:none;padding:0}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 4px 16px;font-size:12px;color:var(--mt);border-bottom:1px solid var(--bd)}
+.ch button{background:none;border:0;color:var(--mt);font-size:12px;padding:4px 8px;border-radius:6px}.ch button:hover{background:var(--cp)}
+pre{margin:0;padding:16px;overflow-x:auto;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.err{color:var(--er);font-size:13px;display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.sk i{display:block;height:12px;border-radius:6px;background:var(--cp);margin:12px 0;animation:p 1.2s infinite ease-in-out}
+.sk i:nth-child(1){width:90%}.sk i:nth-child(2){width:70%}.sk i:nth-child(3){width:45%}
+@keyframes p{50%{opacity:.45}}
+.comp{padding:8px 16px 8px}
+.pill{display:flex;align-items:flex-end;gap:8px;background:var(--cp);border-radius:24px;padding:8px;max-width:768px;margin:0 auto}
+.pill textarea{flex:1;border:0;background:none;resize:none;outline:0;padding:6px 4px;max-height:200px;line-height:1.5;min-width:0}
+.pill .btn{border-radius:20px;height:36px}.pill .ic{width:36px;padding:0;font-size:20px;border:0}
+.note{text-align:center;margin:8px 0 0;font-size:12px}
+.prev{display:none;width:46%;max-width:640px;flex:none;border-left:1px solid var(--bd);flex-direction:column;background:var(--bg)}
+body.pv .prev{display:flex}
+.ph{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bd)}.ph .seg{margin:0 auto 0 0}
+.pbody{flex:1;overflow:auto;min-height:0;display:flex;flex-direction:column}
+.pbody iframe{flex:1;border:0;background:#fff}
+.pbody .cb{margin:8px 16px 16px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.pbody .chips{padding:8px 16px}
+.chip{background:none;border:1px solid var(--bd);border-radius:16px;padding:4px 12px;font-size:13px}
+.chip.on{border-color:var(--ac);color:var(--ac)}
+.ov{position:fixed;inset:0;z-index:50;background:#0008;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--bg);border:1px solid var(--bd);border-radius:16px;width:560px;max-width:100%;max-height:100%;display:flex;flex-direction:column}
+.mh{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--bd)}
+.mb{padding:16px;overflow:auto}
+.rows{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 16px;border:1px solid var(--bd);border-radius:12px;background:none;text-align:left;width:100%}
+.row span{display:block;color:var(--mt);font-size:13px}
+button.row:hover{background:var(--cp)}.row.off{opacity:.6}
+.tag{font-style:normal;font-size:12px;color:var(--mt);border:1px solid var(--bd);border-radius:6px;padding:0 8px;margin:4px 4px 0 0;display:inline-block;white-space:nowrap}
+.r{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.mb h4{margin:24px 0 8px;font-size:14px}
+.pre{background:var(--ca);border:1px solid var(--bd);border-radius:8px;padding:12px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
+.lnk{background:none;border:0;color:var(--ac);padding:0;font-size:13px;text-decoration:underline;margin-top:16px}
+.wsg{display:grid;grid-template-columns:160px 1fr;gap:16px}
+.wl{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto}
+.fi{background:none;border:0;text-align:left;padding:4px 8px;border-radius:6px;font-size:13px;overflow:hidden;text-overflow:ellipsis}.fi:hover{background:var(--cp)}
+.we{display:flex;flex-direction:column;gap:8px;min-width:0}.we textarea{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.scrim{display:none;position:fixed;inset:0;background:#0007;z-index:20}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:90%}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+[hidden]{display:none!important}
+@media(max-width:859px){.side{position:fixed;top:0;bottom:0;left:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body.sb .scrim{display:block}.top{padding:8px}.top .acts{order:4;width:100%;overflow-x:auto}#av{order:3}}
+@media(max-width:1099px){.prev{position:fixed;inset:0;width:auto;max-width:none;z-index:40;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}
+@media(max-width:599px){.wsg{grid-template-columns:1fr}.est h1{font-size:24px}}
+</style>
 </head>
 <body>
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="mark" aria-hidden="true">N</span><span class="brandText"><b>NEXUS AI CODE</b><small>Crouton assistant</small></span></div>
-    <button class="newChat" id="newChat" type="button">+ New chat</button>
-    <input id="search" placeholder="Search conversations" aria-label="Search conversations"/>
-    <nav class="chatList" id="chatList" aria-label="Conversations"></nav>
-    <div class="sideBottom">
-      <a class="sideLink" href="https://github.com/yewanfxiuki/Well-GPT" target="_blank" rel="noopener">GitHub repository</a>
-      <a class="sideLink" href="/control-center">Control Center</a>
-      <div class="userRow"><span id="userCard">Signing in…</span><button class="textBtn" id="themeBtn" type="button">Theme</button></div>
-    </div>
-  </aside>
-  <div class="scrim" id="scrim" hidden></div>
-
-  <main class="main">
-    <header class="topbar">
-      <button class="iconBtn" id="menuBtn" type="button" aria-label="Menu">≡</button>
-      <div class="seg" role="tablist" aria-label="Mode">
-        <button class="segBtn active" data-mode="chat" type="button">Chat</button>
-        <button class="segBtn" data-mode="build-website" type="button">Build</button>
-      </div>
-      <div class="topRight">
-        <button class="chipBtn" id="ghBtn" type="button">GitHub</button>
-        <button class="chipBtn" id="marketBtn" type="button">Models</button>
-        <button class="chipBtn" id="wsBtn" type="button">Workspace</button>
-        <button class="avatar" id="avatarBtn" type="button" aria-label="Account">G</button>
-      </div>
-    </header>
-
-    <div class="toolbar">
-      <label>Model<select id="model"></select></label>
-      <label>Think<select id="think"><option value="default">Default · auto</option><option value="low">Low · fast</option><option value="medium">Medium · balanced</option><option value="high">High · deep</option><option value="max">Max · deepest</option></select></label>
-      <label class="usageToggle"><input type="checkbox" id="usageToggle"/> Usage</label>
-    </div>
-
-    <section class="chatCol">
-      <div class="empty" id="empty">
-        <div class="emptyMark" aria-hidden="true">N</div>
-        <h1>What can I help you build?</h1>
-        <p class="muted">Streaming · persistent · mobile + desktop</p>
-        <div class="suggestGrid">
-          <button type="button" data-prompt="Hello! What can you do?"><b>What can you do?</b><span>Capabilities &amp; tips</span></button>
-          <button type="button" data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact"><b>Build a website</b><span>Landing page with preview</span></button>
-          <button type="button" data-prompt="Build a fullstack todo app with Node server and nice HTML UI"><b>Build a fullstack app</b><span>Node + UI scaffold</span></button>
-          <button type="button" data-prompt="Explain how GitHub connect and Workspace work in 3 bullets"><b>GitHub &amp; Workspace</b><span>Repos, files, checks</span></button>
-        </div>
-      </div>
-      <div class="messages" id="messages" aria-live="polite"></div>
-      <div class="typing" id="typing"></div>
-    </section>
-
-    <div class="composerWrap">
-      <div id="fileChip" class="fileChip" hidden><span id="fileName"></span><button id="fileClear" type="button">×</button></div>
-      <form class="composer" id="form">
-        <label class="attach" title="Attach a text file (≤20KB)">＋<input id="fileInput" type="file" accept=".txt,.md,.js,.html,.css,.json,.py"/></label>
-        <textarea id="input" rows="1" placeholder="Message Crouton…" aria-label="Message"></textarea>
-        <button class="sendBtn" id="sendBtn" type="submit" aria-label="Send">↑</button>
-      </form>
-      <p class="fine"><span id="netBadge">live</span> · <span id="usageBadge" hidden></span> · free tier quotas apply</p>
-    </div>
-  </main>
-
-  <aside class="canvas" id="canvas" hidden>
-    <div class="tabs"><button class="tab active" id="tabPreview" type="button">Preview</button><button class="tab" id="tabFiles" type="button">Files</button><button id="closeCanvas" class="iconBtn" type="button" aria-label="Close">✕</button></div>
-    <div id="panePreview" class="pane"><div id="previewEmpty" class="previewEmpty">No preview yet.<br/><span>Use Build mode and ask for a website — the result appears here.</span></div><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin" hidden></iframe></div>
-    <div id="paneFiles" class="pane" hidden><div id="filesList" class="files"></div><div class="row pad"><button id="dlBtn" class="primary" type="button">Download HTML</button><button id="copyBtn" class="ghost" type="button">Copy</button></div></div>
-  </aside>
+<div id="app">
+<aside class="side">
+ <div class="logo">NEXUS AI CODE</div>
+ <div class="sp"><button class="btn p w" data-a="new">+ New chat</button><input id="q" class="in" placeholder="Search chats" aria-label="Search chats"></div>
+ <nav id="list" class="list"></nav>
+ <div class="foot"><button class="usr" data-a="signin"><span class="av" id="av2"></span><span id="un"></span></button><button class="btn" data-a="theme">Theme</button></div>
+</aside>
+<div class="scrim" data-a="sb"></div>
+<main class="main">
+ <header class="top">
+  <button class="btn" data-a="sb" aria-label="Toggle sidebar">Menu</button>
+  <div class="seg" id="seg"><button data-a="mode" data-v="Chat">Chat</button><button data-a="mode" data-v="Build">Build</button></div>
+  <div class="acts"><button class="btn" data-a="gh">GitHub</button><button class="btn" data-a="models">Models</button><button class="btn" data-a="ws">Workspace</button></div>
+  <button class="av" id="av" data-a="signin" aria-label="Account"></button>
+ </header>
+ <div class="tool">
+  <label class="mt">Model <select id="msel" class="in sm"></select></label>
+  <label class="mt">Think <select id="tsel" class="in sm"></select></label>
+  <button class="btn" id="usg" data-a="usage" aria-pressed="false">Usage</button>
+  <span class="mt" id="utot"></span>
+  <button class="btn" id="fbtn" data-a="prev" hidden>Preview</button>
+ </div>
+ <section class="chat" id="chat"><div class="col" id="col"></div></section>
+ <footer class="comp">
+  <div class="pill">
+   <button class="btn ic" data-a="attach" aria-label="Attach file">+</button>
+   <input type="file" id="fi" hidden multiple accept="text/*,.js,.ts,.tsx,.jsx,.json,.md,.py,.html,.css,.go,.rs,.java,.sql,.yml,.yaml">
+   <textarea id="ta" rows="1" placeholder="Message Crouton" aria-label="Message"></textarea>
+   <button class="btn p" id="send" data-a="send">Send</button>
+  </div>
+  <p class="mt note">Crouton can make mistakes. Review code before you run it.</p>
+ </footer>
+</main>
+<aside class="prev" id="prev">
+ <div class="ph"><div class="seg" id="ptabs"><button data-a="ptab" data-v="Preview">Preview</button><button data-a="ptab" data-v="Files">Files</button></div><button class="btn" id="pz" data-a="zip" hidden>ZIP</button><button class="btn" data-a="pclose">Close</button></div>
+ <div class="pbody" id="pbody"></div>
+</aside>
 </div>
+<div class="ov" id="ov" hidden></div>
+<div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s),LS='nx.v1',uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MODELS=[
+{id:'opencode/crouton-alpha-free',tier:'quick',n:'Crouton Alpha Free',d:'Fast answers and small edits. Lightest use of your plan.',tags:['Free','Coding']},
+{id:'opencode/big-pickle',tier:'default',n:'Big Pickle',d:'Balanced model for everyday building and debugging.',tags:['Coding','Reasoning']},
+{id:'opencode/deepseek-v4.1-flash-free',tier:'complex',n:'DeepSeek V4.1 Flash Free',d:'Deepest reasoning for architecture and hard bugs.',tags:['Reasoning','Coding']}];
+const SUG=[['What can you do','Overview of how Crouton helps you build','What can you do? Give a short overview of how you can help me build software.'],
+['Build a website','Landing page with live preview','Build a responsive landing page for a specialty coffee roaster with a hero, menu and contact form.'],
+['Fullstack app','Plan and scaffold an app with auth','Scaffold a fullstack todo app with authentication: folder structure, data model, API routes and the key code.'],
+['GitHub & Workspace','Set up a repo and push your project','Walk me through creating a Git repository for my project and pushing it to GitHub.']];
+const EXT={html:'html',css:'css',js:'js',javascript:'js',ts:'ts',typescript:'ts',jsx:'jsx',tsx:'tsx',json:'json',py:'py',python:'py',md:'md',go:'go',rs:'rs',java:'java',sql:'sql'};
+const GIT='git init\ngit add .\ngit commit -m "Initial commit"\ngit remote add origin https://github.com/USER/REPO.git\ngit push -u origin main';
+const SK='<div class="sk"><i></i><i></i><i></i></div>';
+const SYS=m=>'You are Crouton, the coding assistant inside NEXUS AI CODE. Be concise and precise and use Markdown. Put code in fenced blocks with the file name after the language, for example ```html index.html. '+(m==='Build'?'Build mode: when asked for a site or app, reply with complete, working files (a single self-contained index.html with inline CSS and JS unless told otherwise) and at most two sentences of explanation.':'Chat mode: answer directly and include code only when it helps.');
+let S={};try{S=JSON.parse(localStorage.getItem(LS))||{}}catch(e){}
+S.convs=S.convs||[];S.ws=S.ws||{};S.auth=S.auth||{kind:'guest',name:'Guest'};
+S.set=Object.assign({theme:'auto',model:'opencode/crouton-alpha-free',think:'Default',usage:false,mode:'Chat',sb:true},S.set);
+if(innerWidth<860)S.set.sb=false;
+let busy=false,q='',editing=-1,pt='Preview',pf=null,pv=false,mflt='All',ST,TT,lastH=null,ctl=null,device=null;
+try{device=localStorage.getItem('nx.device');if(!device){device='d-'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem('nx.device',device)}}catch(e){device='d-local-'+Date.now().toString(36)}
+const cur=()=>S.convs.find(c=>c.id===S.cur);
+const save=()=>{clearTimeout(ST);ST=setTimeout(()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}sync()},400)};
+async function sync(){try{await fetch('/api/v1/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device,chats:S.convs})})}catch(e){}}
+async function loadServer(){try{const r=await fetch('/api/v1/conversations?device='+encodeURIComponent(device));const d=await r.json();if(Array.isArray(d.chats)&&d.chats.length){S.convs=d.chats;if(!S.cur)S.cur=d.chats[0]?.id}}catch(e){}}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(TT);TT=setTimeout(()=>t.classList.remove('on'),2600)}
+async function copy(t){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}toast('Copied')}
+const lock=()=>busy&&(toast('Press Stop first'),1);
 
-<div class="modalWrap" id="loginModal" hidden><div class="modal"><div class="modalHead"><h2>Sign in</h2><button class="iconBtn" id="closeLogin" type="button">✕</button></div><p class="muted small">Guest is automatic — no account needed to chat.</p><div class="loginOpts"><button class="opt primary" id="guestBtn" type="button">Continue as Guest</button><a class="opt" href="/auth/github">GitHub</a><a class="opt" href="/auth/google">Google</a><a class="opt" href="/control-center">Control Center</a></div><form id="emailForm" class="row"><input id="email" type="email" placeholder="you@example.com" required/><button class="primary" type="submit">Sign in</button></form><p class="muted small" id="emailMsg">Demo email sign-in — no mail is sent.</p></div></div>
-<div class="modalWrap" id="ghModal" hidden><div class="modal"><div class="modalHead"><h2>GitHub</h2><button class="iconBtn" id="closeGh" type="button">✕</button></div><div id="ghBody"></div></div></div>
-<div class="modalWrap" id="marketModal" hidden><div class="modal wide"><div class="modalHead"><h2>Model marketplace</h2><button class="iconBtn" id="closeMarket" type="button">✕</button></div><p class="muted small">Free-first · verified $0 IDs from the OpenCode catalog. Quotas apply — never unlimited.</p><div class="filters"><button class="filter active" data-f="all" type="button">All</button><button class="filter" data-f="free" type="button">Free</button><button class="filter" data-f="coding" type="button">Coding</button><button class="filter" data-f="reasoning" type="button">Reasoning</button></div><div id="marketList" class="marketList"></div></div></div>
-<div class="modalWrap" id="wsModal" hidden><div class="modal"><div class="modalHead"><h2>Workspace</h2><button class="iconBtn" id="closeWs" type="button">✕</button></div><p class="muted small">Isolated <code>workspace/</code> · sign-in required · path-safe · 50KB max.</p><div class="row"><button class="ghost" id="wsList" type="button">List</button><input id="wsPath" placeholder="hello.js"/><button class="ghost" id="wsRead" type="button">Read</button></div><div class="row" style="margin-top:6px"><input id="wsContent" placeholder="content…"/><button class="primary" id="wsWrite" type="button">Write</button><button class="ghost" id="wsCheck" type="button">Check JS</button></div><pre id="wsOut" class="wsOut">—</pre></div></div>
-<div id="toast" class="toast" hidden></div>
-<script src="/app.js"></script>
+/* markdown */
+function md(t){const C=[];
+ t=t.replace(/```([\w+-]*)[ \t]*([^\n]*)\n([\s\S]*?)(?:```|$)/g,(m,l,f,c)=>{C.push([l,f,c.replace(/\n$/,'')]);return'\n\n\u0000'+(C.length-1)+'\u0000\n\n'});
+ return t.split(/\n{2,}/).map(p=>{p=p.trim();if(!p)return'';
+  const k=p.match(/^\u0000(\d+)\u0000$/);
+  if(k){const[l,f,c]=C[k[1]];return`<div class="cb"><div class="ch"><span>${esc(f||l||'code')}</span><button data-a="copycode">Copy</button></div><pre><code>${esc(c)}</code></pre></div>`}
+  const h=esc(p).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])\*([^*\n]+)\*/g,'$1<i>$2</i>').replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),L=h.split('\n');
+  if(/^#{1,4} /.test(h))return h.replace(/^(#{1,4}) ([\s\S]*)$/,(m,a,b)=>`<h${a.length+2}>${b}</h${a.length+2}>`);
+  if(L.every(x=>/^\s*[-*] /.test(x)))return'<ul>'+L.map(x=>'<li>'+x.replace(/^\s*[-*] /,'')+'</li>').join('')+'</ul>';
+  if(L.every(x=>/^\s*\d+[.)] /.test(x)))return'<ol>'+L.map(x=>'<li>'+x.replace(/^\s*\d+[.)] /,'')+'</li>').join('')+'</ol>';
+  return'<p>'+L.join('<br>')+'</p>'}).join('')}
+function extract(t){const o={};let n=0;
+ t.replace(/```([\w+-]*)[ \t]*([^\n]*)\n([\s\S]*?)```/g,(m,l,f,c)=>{const e=EXT[l.toLowerCase()],nm=(f.match(/[\w\-./]+\.\w+/)||[])[0];if(!e&&!nm)return;if(!nm&&c.split('\n').length<6)return;
+  o[nm||(e==='html'?'index.html':e==='css'?'styles.css':e==='js'?'script.js':'file'+(++n)+'.'+e)]=c.replace(/\n$/,'')});return o}
+
+/* zip (store method) */
+const CT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t.push(c>>>0)}return t})();
+const crc=b=>{let c=-1;for(let i=0;i<b.length;i++)c=CT[(c^b[i])&255]^(c>>>8);return(c^-1)>>>0};
+function zip(F){const E=new TextEncoder(),P=[],D=[],w=(n,l)=>{const a=[];for(let i=0;i<l;i++)a.push(n>>>(8*i)&255);return a};let o=0;
+ for(const[n,s]of Object.entries(F)){const nm=E.encode(n),d=E.encode(s),c=crc(d),h=[0x50,0x4b,3,4,20,0,0,8,0,0,0,0,0x21,0,...w(c,4),...w(d.length,4),...w(d.length,4),...w(nm.length,2),0,0];
+  P.push(new Uint8Array(h),nm,d);D.push(new Uint8Array([0x50,0x4b,1,2,20,0,...h.slice(4,30),0,0,0,0,0,0,0,0,0,0,...w(o,4)]),nm);o+=h.length+nm.length+d.length}
+ const cs=D.reduce((n,x)=>n+x.length,0),k=Object.keys(F).length;
+ return new Blob([...P,...D,new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...w(k,2),...w(k,2),...w(cs,4),...w(o,4),0,0])],{type:'application/zip'})}
+async function dlzip(){if(!Object.keys(S.ws).length)return toast('The workspace is empty');
+ const f={...S.ws,'README.md':'# NEXUS AI CODE project\n\nGenerated with Crouton on '+new Date().toISOString().slice(0,10)+'.\n'};
+ try{const a=document.createElement('a');a.href=URL.createObjectURL(zip(f));a.download='nexus-ai-code-project.zip';a.click();toast('ZIP saved')}catch(e){toast('Download failed')}}
+
+/* render */
+function renderAll(){const d=document.documentElement,T=S.set.theme,b=document.body,hp=Object.keys(S.ws).length>0;
+ T==='auto'?d.removeAttribute('data-theme'):d.dataset.theme=T;
+ b.classList.toggle('sb',S.set.sb);b.classList.toggle('hp',hp);b.classList.toggle('pv',hp&&pv);$('#fbtn').hidden=!hp;
+ $('#un').textContent=S.auth.name;$('#av').textContent=$('#av2').textContent=S.auth.name[0].toUpperCase();
+ [...$('#seg').children].forEach(x=>x.classList.toggle('on',x.dataset.v===S.set.mode));
+ $('#msel').value=S.set.model;$('#tsel').value=S.set.think;$('#usg').setAttribute('aria-pressed',S.set.usage);
+ side();chat();prev()}
+function side(){const k=q.toLowerCase(),L=S.convs.filter(c=>!k||(c.title+' '+c.msgs.map(m=>m.c).join(' ')).toLowerCase().includes(k));
+ $('#list').innerHTML=L.length?L.map(c=>`<div class="ci${c.id===S.cur?' on':''}" role="button" tabindex="0" data-a="open" data-id="${c.id}"><span>${esc(c.title)}</span><button class="x" data-a="del" data-c="1" data-id="${c.id}" aria-label="Delete conversation">Delete</button></div>`).join(''):`<div class="empty">${k?'No matching chats':'No conversations yet'}</div>`}
+function chat(){const c=cur(),col=$('#col');
+ $('#utot').textContent=S.set.usage&&c?'~'+Math.ceil(c.msgs.reduce((n,m)=>n+m.c.length,0)/4).toLocaleString()+' tokens in this chat':'';
+ if(!c||!c.msgs.length){col.innerHTML=`<div class="est"><h1>What can I help you build?</h1><div class="cards">${SUG.map((s,i)=>`<button class="card" data-a="sug" data-i="${i}"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></button>`).join('')}</div></div>`;return}
+ col.innerHTML=c.msgs.map((m,i)=>msg(m,i,i===c.msgs.length-1)).join('');$('#chat').scrollTop=1e9}
+function msg(m,i,last){
+ if(m.r==='user')return editing===i?`<div class="m u"><textarea class="in" id="ed" rows="3" aria-label="Edit message">${esc(m.c)}</textarea><div class="act" style="opacity:1"><button data-a="esave" data-i="${i}">Save and send</button><button data-a="ecancel">Cancel</button></div></div>`
+  :`<div class="m u"><div class="b">${esc(m.c)}</div><div class="act"><button data-a="edit" data-i="${i}">Edit</button><button data-a="cpm" data-i="${i}">Copy</button></div></div>`;
+ const run=busy&&last,mo=MODELS.find(x=>x.id===m.mod),u=S.set.usage&&m.ms?`<div class="mt">${mo?esc(mo.n)+' · ':''}~${Math.ceil(m.c.length/4)} tokens · ${(m.ms/1000).toFixed(1)}s</div>`:'';
+ return`<div class="m a"><div class="who">Crouton</div><div class="b md">${m.c?md(m.c):run?SK:''}</div>${m.stopped?'<div class="mt">Stopped</div>':''}${m.err?`<div class="err">${esc(m.err)} <button class="btn" data-a="retry" data-i="${i}">Retry</button></div>`:''}${u}${run||m.err?'':`<div class="act"><button data-a="cpm" data-i="${i}">Copy</button><button data-a="retry" data-i="${i}">Regenerate</button></div>`}</div>`}
+function paintLast(){const c=cur(),m=c.msgs[c.msgs.length-1],ch=$('#chat'),n=ch.scrollHeight-ch.scrollTop-ch.clientHeight<120,b=document.querySelector('#col .m.a:last-child .b');if(b)b.innerHTML=m.c?md(m.c):SK;if(n)ch.scrollTop=ch.scrollHeight}
+function srcdoc(){let h=S.ws['index.html'];if(h==null){const k=Object.keys(S.ws).find(k=>/\.html?$/.test(k));if(!k)return null;h=S.ws[k]}
+ return h.replace(/<link[^>]+href=["']([^"']+)["'][^>]*>/g,(m,f)=>S.ws[f]!=null?'<style>'+S.ws[f]+'</style>':m).replace(/<script([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/g,(m,a,f)=>S.ws[f]!=null?'<script>'+S.ws[f]+'<\/script>':m)}
+function prev(){const k=Object.keys(S.ws).sort();if(!k.length)return;
+ [...$('#ptabs').children].forEach(b=>b.classList.toggle('on',b.dataset.v===pt));$('#pz').hidden=false;
+ const B=$('#pbody');
+ if(pt==='Preview'){const h=srcdoc();if(h!==null&&h===lastH&&B.firstChild&&B.firstChild.tagName==='IFRAME')return;lastH=h;
+  B.innerHTML=h!==null?'<iframe title="Preview" sandbox="allow-scripts"></iframe>':'<div class="empty">No web page in the project yet. Ask Crouton for a website in Build mode, or open Files.</div>';if(h!==null)B.firstChild.srcdoc=h}
+ else{lastH=null;if(!(pf in S.ws))pf=k[0];B.innerHTML=`<div class="chips">${k.map(n=>`<button class="chip${n===pf?' on':''}" data-a="pfile" data-n="${esc(n)}">${esc(n)}</button>`).join('')}</div><div class="cb"><div class="ch"><span>${esc(pf)}</span><button data-a="copyf">Copy</button></div><pre><code>${esc(S.ws[pf])}</code></pre></div>`}}
+
+/* modals */
+function modal(t,h){const o=$('#ov');o.hidden=false;o.innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-label="${t}"><div class="mh"><b>${t}</b><button class="btn" data-a="close">Close</button></div><div class="mb">${h}</div></div>`}
+function acct(){const e=S.auth.email;
+ modal('Account',`<p class="mt" style="margin:0">${e?'Signed in as <b>'+esc(e)+'</b>. Chats sync to the server.':'Using <b>Guest</b>. Chats stay on this device + server for this browser.'}</p>
+<div class="rows"><button class="row" data-a="guest"><div><b>Guest</b><span>Instant. No account needed.</span></div><em class="tag">${e?'Switch':'Active'}</em></button>
+<button class="row" data-a="email"><div><b>Email</b><span>Demo sign-in. No mail is sent.</span></div><em class="tag">${e?'Active':'Sign in'}</em></button>
+${['GitHub','Google'].map(p=>`<div class="row off"><div><b>${p}</b><span>Needs server OAuth setup. See README.</span></div><em class="tag">Setup</em></div>`).join('')}</div>
+${e?'<button class="btn" data-a="signout">Sign out</button><br>':''}<button class="lnk" data-a="cc">Open Control Center</button>`)}
+function cc(){const f=Object.keys(S.ws).length,kb=Math.round(JSON.stringify(S).length/1024);
+ modal('Control Center',`<div class="rows"><div class="row"><div><b>Account</b><span>${esc(S.auth.name)} (${esc(S.auth.kind)})</span></div></div><div class="row"><div><b>Storage</b><span>${S.convs.length} chats, ${f} workspace files, about ${kb} KB</span></div></div><div class="row"><div><b>Health</b><span id="cc-health">Checking…</span></div></div></div><div class="r"><button class="btn" data-a="zip">Download project ZIP</button><button class="btn" data-a="clrc" data-c="1">Clear chats</button><button class="btn" data-a="clrw" data-c="1">Clear workspace</button></div>`);
+ fetch('/api/v1/health').then(r=>r.json()).then(d=>{const e=$('#cc-health');if(e)e.textContent=d.ok?`${d.app} v${d.version} · ok`:'unavailable'}).catch(()=>{const e=$('#cc-health');if(e)e.textContent='unavailable'})}
+function mm(){modal('Model marketplace',`<div class="chips">${['All','Free','Coding','Reasoning'].map(f=>`<button class="chip${f===mflt?' on':''}" data-a="mf" data-v="${f}">${f}</button>`).join('')}</div><div class="rows">${MODELS.filter(m=>mflt==='All'||m.tags.includes(mflt)).map(m=>{const on=S.set.model===m.id;return`<div class="row"><div><b>${m.n}</b><span>${m.d}</span>${m.tags.map(t=>`<em class="tag">${t}</em>`).join('')}</div><button class="btn${on?'':' p'}" data-a="pick" data-id="${m.id}"${on?' disabled':''}>${on?'Selected':'Select'}</button></div>`}).join('')}</div>`)}
+function gh(){modal('GitHub',`<div class="row"><div><b>Status</b><span>Checking…</span></div><em class="tag" id="gh-tag">…</em></div><h4>Repositories</h4><div class="empty" id="gh-repos">Loading…</div><h4>Push your project</h4><div class="pre">${esc(GIT)}</div><div class="r"><button class="btn" data-a="copygit">Copy commands</button><button class="btn" data-a="zip">Download project ZIP</button></div>`);
+ fetch('/api/v1/github/repos').then(r=>r.json()).then(d=>{
+  $('#gh-tag').textContent=d.connected?'Connected':'Not connected';
+  $('#gh-repos').innerHTML=d.connected&&d.repos?.length?d.repos.map(x=>`<div class="row"><div><b>${esc(x.name)}</b><span>${x.private?'private':'public'}</span></div></div>`).join(''):'No repositories connected. Guest/Email work instantly.';
+ }).catch(()=>{$('#gh-tag').textContent='Offline';$('#gh-repos').textContent='Could not check GitHub (network).'})}
+function wsm(){modal('Workspace',`<div class="wsg"><div id="wl" class="wl"></div><div class="we"><input id="wn" class="in" placeholder="folder/file.ext" aria-label="File name"><textarea id="wc" class="in" rows="10" spellcheck="false" aria-label="File contents"></textarea><div class="r" style="margin:0"><button class="btn p" data-a="wwrite">Write</button><button class="btn" data-a="wcheck">Check</button><button class="btn" data-a="wdel" data-c="1">Delete</button><button class="btn" data-a="zip">ZIP</button></div><div class="mt" id="wst" role="status"></div></div></div>`);wlist()}
+async function wlist(){const wl=$('#wl');if(!wl)return;wl.innerHTML='<div class="empty">Loading…</div>';
+ try{const r=await fetch('/api/v1/projects/workspace/list');const d=await r.json();const k=Array.isArray(d.files)?d.files:[];
+  if(k.length&&!Object.keys(S.ws).length){for(const n of k.slice(0,20)){try{const rd=await fetch('/api/v1/projects/workspace/read?path='+encodeURIComponent(n));const j=await rd.json();if(j.content)S.ws[n]=j.content}catch(e){}}save();renderAll()}
+  wl.innerHTML=k.length?k.map(n=>`<button class="fi" data-a="wread" data-n="${esc(n)}">${esc(n)}</button>`).join(''):'<div class="empty">No files yet.</div>';
+ }catch(e){wl.innerHTML='<div class="empty">Could not list files.</div>'}}
+const wst=(m,ok=1)=>{const e=$('#wst');if(e){e.textContent=m;e.style.color=ok?'':'var(--er)'}};
+function check(n,c){
+ if(/\.json$/.test(n))try{JSON.parse(c);return[1,'Valid JSON']}catch(e){return[0,e.message]}
+ if(/\.m?js$/.test(n))try{new Function(c);return[1,'No syntax errors']}catch(e){return e.name==='EvalError'?[1,'Syntax check is not available in this view']:[0,e.message]}
+ if(/\.html?$/.test(n)){const d=new DOMParser().parseFromString(c,'text/html');return d.querySelector('parsererror')?[0,'Parse error']:[1,'Parsed OK ('+d.querySelectorAll('*').length+' elements)']}
+ return c.trim()?[1,'File has content ('+c.length+' characters)']:[0,'File is empty']}
+
+/* chat flow */
+const setBusy=v=>{busy=v;const b=$('#send');b.textContent=v?'Stop':'Send';b.setAttribute('aria-label',v?'Stop generating':'Send message')};
+function fin(a,t0){a.ms=Date.now()-t0;setBusy(false);
+ if(a.c&&!a.err){const f=extract(a.c),k=Object.keys(f);if(k.length){Object.assign(S.ws,f);pv=innerWidth>=1100;pt=k.some(x=>/\.html?$/.test(x))?'Preview':'Files';pf=k[0]}}
+ save();renderAll()}
+async function send(text,regen){if(busy)return;let c=cur();
+ if(!regen){text=(text||'').trim();if(!text)return;if(!c){c={id:uid(),title:text.slice(0,48),t:Date.now(),msgs:[]};S.convs.unshift(c);S.cur=c.id}c.msgs.push({r:'user',c:text})}
+ const a={r:'assistant',c:'',mod:S.set.model},t0=Date.now();c.msgs.push(a);c.t=t0;S.convs.sort((x,y)=>y.t-x.t);setBusy(true);side();chat();
+ const input=[];for(const m of c.msgs.slice(0,-1)){if(m.err||!m.c)continue;const l=input[input.length-1];if(l&&l.role===m.r)l.content+='\n\n'+m.c;else input.push({role:m.r,content:m.c})}
+ input[0].content=SYS(S.set.mode)+'\n\n---\n\n'+input[0].content;
+ const thinkMap={Default:'default',Low:'low',Medium:'medium',High:'high',Max:'max'};
+ const modeMap={Chat:'chat',Build:'build-website'};
+ ctl=new AbortController();let full='';
+ try{
+  const r=await fetch('/api/v1/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify({messages:input,model:S.set.model,think:thinkMap[S.set.think]||'default',mode:modeMap[S.set.mode]||'chat'})});
+  if(!r.ok)throw new Error('Request failed '+r.status);
+  const reader=r.body.getReader(),dec=new TextDecoder();let buf='';
+  while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop()||'';
+   for(const line of lines){const s=line.trim();if(!s.startsWith('data:'))continue;const d=s.slice(5).trim();if(!d)continue;
+    try{const j=JSON.parse(d);if(j.token){full+=j.token;a.c=full;paintLast()}if(j.done)full=j.reply||full}catch(e){}}}
+  if(!full)throw new Error('Empty response');a.c=full;
+ }catch(e){if(ctl.signal.aborted||(e&&e.name==='AbortError'))a.stopped=true;else{a.err=(e&&e.message)||'Request failed.';if(!a.c&&S.set.mode==='Build'){const f={};try{fetch('/api/v1/projects/workspace/list').then(r=>r.json())}catch(_){ }}}
+ fin(a,t0)}
+const grow=()=>{const t=$('#ta');t.style.height='auto';t.style.height=Math.min(t.scrollHeight,200)+'px'};
+
+/* actions */
+const A={
+ new(){if(lock())return;S.cur=null;editing=-1;if(innerWidth<860)S.set.sb=false;save();renderAll();$('#ta').focus()},
+ open(t){if(lock())return;S.cur=t.dataset.id;editing=-1;if(innerWidth<860)S.set.sb=false;save();renderAll()},
+ del(t){if(lock())return;S.convs=S.convs.filter(c=>c.id!==t.dataset.id);if(S.cur===t.dataset.id)S.cur=null;save();renderAll()},
+ sb(){S.set.sb=!S.set.sb;save();renderAll()},
+ mode(t){S.set.mode=t.dataset.v;save();renderAll()},
+ theme(){const d=document.documentElement.dataset.theme,dk=d==='dark'||(!d&&matchMedia('(prefers-color-scheme:dark)').matches);S.set.theme=dk?'light':'dark';save();renderAll()},
+ usage(){S.set.usage=!S.set.usage;save();renderAll()},
+ signin:acct,cc,gh,models:mm,ws:wsm,
+ close(){const o=$('#ov');o.hidden=true;o.innerHTML=''},
+ mf(t){mflt=t.dataset.v;mm()},
+ pick(t){S.set.model=t.dataset.id;save();renderAll();mm();toast('Model changed')},
+ guest(){S.auth={kind:'guest',name:'Guest'};save();renderAll();acct();toast('Using guest mode')},
+ email(){fetch('/api/auth/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'guest@local'})}).then(r=>r.json()).then(d=>{S.auth={kind:'email',name:d.user?.email||'Guest'};save();renderAll();acct();toast('Signed in')}).catch(()=>toast('Sign-in failed'))},
+ signout(){fetch('/api/auth/logout',{method:'POST'}).catch(()=>{});S.auth={kind:'guest',name:'Guest'};save();renderAll();acct();toast('Signed out')},
+ clogin(){toast('GitHub/Google need server OAuth setup — see README. Guest works now.')},
+ clrc(){S.convs=[];S.cur=null;save();renderAll();cc()},
+ clrw(){S.ws={};pv=false;save();renderAll();cc()},
+ zip:dlzip,
+ copygit(){copy(GIT)},
+ wread(t){const n=t.dataset.n;$('#wn').value=n;fetch('/api/v1/projects/workspace/read?path='+encodeURIComponent(n)).then(r=>r.json()).then(d=>{$('#wc').value=d.content||'';S.ws[n]=$('#wc').value;wst('Read '+n)}).catch(()=>wst('Read failed',0))},
+ wwrite(){const n=$('#wn').value.trim().replace(/^\/+/,'');if(!n||/\.\./.test(n))return wst('Enter a valid file name',0);S.ws[n]=$('#wc').value;fetch('/api/v1/projects/workspace/write',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:n,content:S.ws[n]})}).then(r=>r.json()).then(d=>{save();wlist();renderAll();wst(d.ok?'Saved '+n+' ('+S.ws[n].length+' characters)':'Save failed',d.ok)}).catch(()=>wst('Save failed (offline)',0))},
+ wcheck(){const n=$('#wn').value.trim();if(!n)return wst('Enter a file name',0);const[ok,m]=check(n,$('#wc').value);wst(n+': '+m,ok)},
+ wdel(){const n=$('#wn').value.trim();if(!(n in S.ws))return wst('No such file',0);delete S.ws[n];save();wlist();renderAll();$('#wn').value=$('#wc').value='';wst('Deleted '+n)},
+ prev(){pv=true;renderAll()},pclose(){pv=false;renderAll()},
+ ptab(t){pt=t.dataset.v;renderAll()},pfile(t){pf=t.dataset.n;renderAll()},copyf(){copy(S.ws[pf])},
+ copycode(t){copy(t.closest('.cb').querySelector('code').textContent)},
+ cpm(t){copy(cur().msgs[+t.dataset.i].c)},
+ sug(t){if(lock())return;const i=+t.dataset.i;if(i===1){S.set.mode='Build';save()}const p=SUG[i][2];$('#ta').value=p;send()},
+ attach(){$('#fi').click()},
+ send(){if(busy){ctl&&ctl.abort();return}const t=$('#ta'),v=t.value.trim();if(!v)return;t.value='';grow();send(v)},
+ edit(t){if(lock())return;editing=+t.dataset.i;chat();$('#ed').focus()},
+ ecancel(){editing=-1;chat()},
+ esave(t){const v=$('#ed').value.trim();if(!v)return;cur().msgs.splice(+t.dataset.i);editing=-1;send(v)},
+ retry(t){if(lock())return;cur().msgs.splice(+t.dataset.i);send(null,true)}
+};
+document.addEventListener('click',e=>{if(e.target.id==='ov')return A.close();const t=e.target.closest('[data-a]');if(!t)return;
+ if(t.dataset.c&&!t.dataset.on){t.dataset.on=1;const l=t.textContent;t.textContent='Confirm';setTimeout(()=>{delete t.dataset.on;t.textContent=l},3000);return}
+ const f=A[t.dataset.a];if(f)f(t)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')A.close();if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('ci'))e.target.click()});
+$('#ta').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();A.send()}});
+$('#ta').addEventListener('input',grow);
+$('#q').addEventListener('input',e=>{q=e.target.value;side()});
+$('#msel').innerHTML=MODELS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
+$('#tsel').innerHTML=['Default','Low','Medium','High','Max'].map(x=>`<option>${x}</option>`).join('');
+$('#msel').addEventListener('change',e=>{S.set.model=e.target.value;save()});
+$('#tsel').addEventListener('change',e=>{S.set.think=e.target.value;save()});
+$('#fi').addEventListener('change',async e=>{const t=$('#ta');for(const f of e.target.files){if(f.size>60000){toast(f.name+' is larger than 60 KB');continue}t.value+=(t.value?'\n\n':'')+'File: '+f.name+'\n```\n'+await f.text()+'\n```'}e.target.value='';grow();t.focus()});
+renderAll();
+loadServer().then(()=>{renderAll();
+ fetch('/api/auth/me').then(r=>r.json()).then(d=>{if(d.user){S.auth={kind:d.user.provider||'guest',name:d.user.name||d.user.email||'Guest'};renderAll()}}).catch(()=>{});
+ const me={};fetch('/api/auth/me').catch(()=>{});
+});
+</script>
 </body>
 </html>
