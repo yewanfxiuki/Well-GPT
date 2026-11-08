@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="description" content="Well-GPT — ChatGPT + OpenCode style AI that connects to GitHub and builds websites & fullstack apps"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="description" content="Well-GPT · Crouton Alpha — ChatGPT + OpenCode style AI that builds websites & fullstack apps"/>
 <title>Well-GPT · Chat</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>"/>
 <link rel="stylesheet" href="/style.css"/>
@@ -12,91 +12,98 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sideTop">
-      <div class="logo">🍔 <b>Well-GPT</b><span class="ver">v2</span></div>
+      <div class="logo">🍔 <b>Well-GPT</b><span class="ver">Crouton Alpha ★</span></div>
       <button class="newChat" id="newChat">＋ New chat</button>
       <input id="search" placeholder="Search chats" aria-label="Search chats"/>
     </div>
-    <div class="chatList" id="chatList"></div>
+    <nav class="chatList" id="chatList"></nav>
     <div class="sideBottom">
       <a class="sideLink" href="https://github.com/yewanfxiuki/Well-GPT" target="_blank" rel="noopener">🐙 GitHub repo</a>
       <a class="sideLink" href="/admin">🛡️ Admin panel</a>
-      <div class="userCard" id="userCard">Signing in as guest…</div>
+      <div class="userCard" id="userCard">👤 Guest</div>
     </div>
   </aside>
+  <div class="scrim" id="scrim" hidden></div>
 
   <main class="main">
     <header class="topbar">
-      <button class="iconBtn onlyMobile" id="menuBtn" aria-label="Menu">☰</button>
-      <div class="selectors">
-        <select id="model" aria-label="Model"></select>
-        <select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select>
-        <select id="mode" aria-label="Mode"><option value="chat">Chat</option><option value="build-website">🌐 Build website</option><option value="build-fullstack">🛠️ Build fullstack</option></select>
+      <button class="circleBtn" id="menuBtn" aria-label="Menu">≡</button>
+      <div class="modePill" role="tablist" aria-label="Mode">
+        <button class="modeBtn active" data-mode="chat">Chat</button>
+        <button class="modeBtn" data-mode="build-website">✦ Build</button>
       </div>
       <div class="topRight">
-        <button id="ghBtn" class="ghBtn" title="GitHub connection">◦ Connect GitHub</button>
-        <button class="iconBtn" id="themeBtn" aria-label="Theme">◐</button>
-        <button class="iconBtn" id="canvasBtn" aria-label="Preview" title="Preview">▣</button>
+        <button class="circleBtn" id="avatarBtn" aria-label="Account">●</button>
       </div>
     </header>
 
-    <div class="content">
-      <section class="chatCol">
-        <div class="empty" id="empty">
-          <div class="emptyLogo">🍔</div>
-          <h1>What will you build today?</h1>
-          <p class="muted">Chat, build a website, or scaffold a fullstack app — live, free, and connected to GitHub.</p>
-          <div class="suggest">
-            <button data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">🌐 <b>Landing page</b><span>Build a website</span></button>
-            <button data-prompt="Build a fullstack todo app with Node server and a nice HTML UI">🛠️ <b>Fullstack todo</b><span>Node + HTML</span></button>
-            <button data-prompt="Hello! Explain how Well-GPT connects to GitHub in one short paragraph">🐙 <b>GitHub</b><span>How it connects</span></button>
-          </div>
-        </div>
-        <div class="messages" id="messages" aria-live="polite"></div>
-        <div class="typing" id="typing"></div>
-      </section>
-
-      <aside class="canvas" id="canvas" hidden>
-        <div class="tabs"><button class="tab active" id="tabPreview">Preview</button><button class="tab" id="tabFiles">Files</button><button class="iconBtn" id="closeCanvas" aria-label="Close preview">✕</button></div>
-        <div id="panePreview" class="pane"><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe><p class="muted small pad">Live preview of the last generated HTML. Sandboxed for safety.</p></div>
-        <div id="paneFiles" class="pane" hidden>
-          <div id="filesList" class="files"></div>
-          <div class="row pad"><button id="dlBtn" class="primary">Download HTML</button><button id="copyBtn" class="ghost">Copy code</button></div>
-        </div>
-      </aside>
+    <div class="pickers">
+      <select id="model" aria-label="Model"></select>
+      <select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select>
+      <select id="modeSel" aria-label="Build mode"><option value="chat">💬 Chat</option><option value="build-website">🌐 Build website</option><option value="build-fullstack">🛠️ Build fullstack</option></select>
+      <button class="ghChip" id="ghBtn">◦ GitHub</button>
     </div>
+
+    <section class="chatCol">
+      <div class="empty" id="empty">
+        <h1 id="emptyTitle">Put Well-GPT to work</h1>
+        <div class="taskRow" id="taskRow">
+          <button data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">📍 <b>Build a website</b></button>
+          <button data-prompt="Build a fullstack todo app with Node server and nice HTML UI">🛠️ <b>Build fullstack</b></button>
+          <button data-prompt="Learn a language — make a simple 7-day starter plan">✏️ <b>Learn a language</b></button>
+          <button data-prompt="Plan my weekend — simple budget-friendly plan">📍 <b>Plan my weekend</b></button>
+          <button data-prompt="Price alerts — explain how to track prices simply">🛍️ <b>Price alerts</b></button>
+          <button data-prompt="Find weekend ideas — 5 fun things to do">📖 <b>Find weekend ideas</b></button>
+        </div>
+        <button class="pickTask" id="pickTask">Pick a task</button>
+        <p class="muted small">Crouton Alpha Free · live, no key · Android + PC friendly</p>
+      </div>
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <div class="typing" id="typing"></div>
+    </section>
 
     <div class="composerWrap">
       <form class="composer" id="form">
-        <button type="button" class="iconBtn" id="attachBtn" title="Attach" aria-label="Attach">📎</button>
-        <textarea id="input" rows="1" placeholder="Message Well-GPT…  (Enter ↵ · Shift+Enter new line)" aria-label="Message"></textarea>
+        <button type="button" class="plusBtn" id="attachBtn" aria-label="New">＋</button>
+        <textarea id="input" rows="1" placeholder="Ask Well-GPT" aria-label="Message"></textarea>
+        <button type="button" class="micBtn" id="micBtn" aria-label="Voice">🎤</button>
         <button type="submit" class="sendBtn" aria-label="Send">↑</button>
       </form>
-      <p class="fine">Well-GPT can be wrong. Live free replies · no key needed · server holds the keys.</p>
+      <p class="fine">Crouton Alpha (C-R-O-U-T-O-N) AI can be wrong · <span id="netBadge">live</span></p>
     </div>
   </main>
+
+  <aside class="canvas" id="canvas" hidden>
+    <div class="tabs">
+      <button class="tab active" id="tabPreview">Preview</button>
+      <button class="tab" id="tabFiles">Files</button>
+      <button id="closeCanvas" class="circleBtn smallBtn" aria-label="Close preview">✕</button>
+    </div>
+    <div id="panePreview" class="pane"><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe></div>
+    <div id="paneFiles" class="pane" hidden>
+      <div id="filesList" class="files"></div>
+      <div class="row pad"><button id="dlBtn" class="primary">Download</button><button id="copyBtn" class="ghost">Copy</button></div>
+    </div>
+  </aside>
 </div>
 
 <div class="modalWrap" id="loginModal" hidden>
-  <div class="modal card" role="dialog" aria-modal="true">
-    <div class="modalHead"><h2>Sign in</h2><button class="iconBtn" id="closeLogin" aria-label="Close">✕</button></div>
-    <p class="muted small">Pick any option — Guest is instant and recommended.</p>
+  <div class="modal card">
+    <div class="modalHead"><h2>Sign in</h2><button class="circleBtn" id="closeLogin">✕</button></div>
+    <p class="muted small">Guest is instant (auto already). Pick any:</p>
     <div class="loginOpts">
-      <button class="opt primary" id="guestBtn">🙋 Continue as Guest<br/><span class="small">Instant, no account</span></button>
-      <a class="opt" href="/auth/github">🐙 Sign in with GitHub<br/><span class="small">Setup via OAuth if needed</span></a>
-      <a class="opt" href="/auth/google">G &nbsp; Sign in with Google</a>
-      <a class="opt" href="/admin">🛡️ Admin panel</a>
+      <button class="opt primary" id="guestBtn">🙋 Continue as Guest</button>
+      <a class="opt" href="/auth/github">🐙 GitHub</a>
+      <a class="opt" href="/auth/google">G &nbsp; Google</a>
+      <a class="opt" href="/admin">🛡️ Admin</a>
     </div>
-    <form id="emailForm" class="emailForm">
-      <label for="email">Email</label>
-      <div class="row"><input id="email" type="email" placeholder="you@example.com" autocomplete="email" required/><button type="submit" class="primary">Sign in</button></div>
-      <p class="muted small" id="emailMsg"></p>
-    </form>
+    <form id="emailForm" class="emailForm"><div class="row"><input id="email" type="email" placeholder="you@example.com" required/><button class="primary">Go</button></div><p class="muted small" id="emailMsg"></p></form>
   </div>
 </div>
 
 <div class="modalWrap" id="ghModal" hidden>
-  <div class="modal card" role="dialog" aria-modal="true">
-    <div class="modalHead"><h2>Connect GitHub</h2><button class="iconBtn" id="closeGh" aria-label="Close">✕</button></div>
+  <div class="modal card">
+    <div class="modalHead"><h2>GitHub</h2><button class="circleBtn" id="closeGh">✕</button></div>
     <div id="ghBody"></div>
   </div>
 </div>

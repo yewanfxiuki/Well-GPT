@@ -204,9 +204,10 @@ async function handleChat(req, res) {
   }
 
   // 2) Free live model, no key: Pollinations (best-effort, rate-limited ~30s/IP). No Authorization header.
+  // Short timeout (15s max) so UI never hangs on "Thinking…".
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 40000);
+    const t = setTimeout(() => ctrl.abort(), 15000);
     const resp = await fetch('https://text.pollinations.ai/openai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -227,12 +228,25 @@ async function handleChat(req, res) {
     }
   } catch { log('error', 'live failed'); }
 
-  // 3) Demo fallback so the app never errors
+  // 3) Instant local fallback so it NEVER hangs (free API is best-effort).
   const lastUser = [...clean].reverse().find(m => m.role === 'user')?.content || '';
+  const q = lastUser.toLowerCase();
   const thinkNote = think === 'max' ? 'Deep thinking (Max).' : think === 'medium' ? 'Medium thinking.' : 'Default thinking.';
-  const demoReply = `${thinkNote}\n\nYou asked: "${lastUser.slice(0, 500)}"\n\nLive free API is busy (rate limit ~30s). Try again in a few seconds.\n\nTo use true ${model}: set OPENCODE_API_BASE + OPENCODE_API_KEY on the server (never in browser code) and restart.`;
+  let reply;
+  if (mode === 'build-website' || /build|landing|website|coffee|todo/.test(q)) {
+    const topic = lastUser.length < 80 ? lastUser : 'My Project';
+    reply = `${thinkNote} Here's a ready-to-preview site for “${topic.slice(0,60)}”.\n\n\`\`\`html\n<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${topic.replace(/</g,'').slice(0,60)||'My Project'}</title><style>body{margin:0;font-family:system-ui;background:#0d0d0d;color:#fff}nav{display:flex;justify-content:space-between;padding:16px 20px}nav b{font-size:18px}.hero{padding:70px 20px;text-align:center;background:linear-gradient(135deg,#f59e0b,#f97316)}.hero h1{font-size:42px;margin:0 0 10px}.btn{background:#111;color:#fff;border:none;padding:12px 22px;border-radius:999px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;padding:20px}.card{background:#1f1f1f;border:1px solid #333;border-radius:16px;padding:18px}footer{padding:20px;text-align:center;color:#999}</style></head><body><nav><b>🍔 ${topic.replace(/</g,'').slice(0,30)||'My Project'}</b><span>Home · Work · Contact</span></nav><section class="hero"><h1>Welcome</h1><p>Built with Well-GPT · Crouton Alpha Free</p><button class="btn">Get started</button></section><section class="grid"><div class="card"><h3>Fast</h3><p>Live by default, no key needed.</p></div><div class="card"><h3>Beautiful</h3><p>Responsive on Android & PC.</p></div><div class="card"><h3>Powerful</h3><p>Build websites & fullstack apps.</p></div></section><footer>© 2026 ${topic.replace(/</g,'').slice(0,30)||'My Project'}</footer><script>document.querySelector('.btn').onclick=()=>alert('Welcome!')}</script></body></html>\n\`\`\`\n\nLive API is busy right now (free tier ~30s). This template is instant so you can preview immediately — ask again in a few seconds and you'll get full live generation.`;
+  } else if (/^(hi|hello|hey|salam|hello crouton|hey crouton)/.test(q.trim())) {
+    reply = `${thinkNote}\n\nHello! 👋 I'm Crouton Alpha (Well-GPT).\n\nI can:\n• 💬 Chat on any topic\n• 🌐 Build a website (Mode → Build website)\n• 🛠️ Scaffold a fullstack app\n• 🐙 Connect to GitHub\n\nWhat do you want to build today?`;
+  } else if (/what.*(name|who.*you)|crouton/.test(q)) {
+    reply = `${thinkNote}\n\nI'm **Crouton Alpha**, running in Well-GPT (spelled C-R-O-U-T-O-N, not CROUTUN).\n\nModel: ${model} · Think: ${think} · Mode: ${mode}\n\nAsk me to build something and watch the Preview panel appear.`;
+  } else if (/github|connect|repo/.test(q)) {
+    reply = `${thinkNote}\n\nGitHub connect: tap **◐ Connect GitHub** at the top. Guest/Email logins work instantly with no setup. For full OAuth, create an app at github.com → Settings → Developer settings → OAuth Apps (Homepage http://127.0.0.1:3000, Callback /auth/github/callback), then set GITHUB_CLIENT_ID/SECRET on the server.\n\nYour repo is live: github.com/yewanfxiuki/Well-GPT`;
+  } else {
+    reply = `${thinkNote}\n\nYou asked: “${lastUser.slice(0,200)}”\n\nLive free API is busy (rate limit ~30s) — I answered instantly so you never hang. Try again in a few seconds for full live generation, or switch Mode to Build website / Build fullstack to get a previewable app right now.\n\nTip: Default = fast, Medium = balanced, Max = deepest.`;
+  }
   res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
-  res.end(JSON.stringify({ reply: demoReply, model, think, via: 'demo' }));
+  res.end(JSON.stringify({ reply, model, think, via: 'local' }));
 }
 
 const server = http.createServer(async (req, res) => {
