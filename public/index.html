@@ -291,7 +291,7 @@ async function send(text,regen){if(busy)return;let c=cur();
    for(const line of lines){const s=line.trim();if(!s.startsWith('data:'))continue;const d=s.slice(5).trim();if(!d)continue;
     try{const j=JSON.parse(d);if(j.token){full+=j.token;a.c=full;paintLast()}if(j.done)full=j.reply||full}catch(e){}}}
   if(!full)throw new Error('Empty response');a.c=full;
- }catch(e){if(ctl.signal.aborted||(e&&e.name==='AbortError'))a.stopped=true;else{a.err=(e&&e.message)||'Request failed.';if(!a.c&&S.set.mode==='Build'){const f={};try{fetch('/api/v1/projects/workspace/list').then(r=>r.json())}catch(_){ }}}
+ }catch(e){if(ctl.signal.aborted||(e&&e.name==='AbortError'))a.stopped=true;else{a.err=(e&&e.message)||'Request failed.'}}
  fin(a,t0)}
 const grow=()=>{const t=$('#ta');t.style.height='auto';t.style.height=Math.min(t.scrollHeight,200)+'px'};
 
@@ -347,7 +347,6 @@ $('#fi').addEventListener('change',async e=>{const t=$('#ta');for(const f of e.t
 renderAll();
 loadServer().then(()=>{renderAll();
  fetch('/api/auth/me').then(r=>r.json()).then(d=>{if(d.user){S.auth={kind:d.user.provider||'guest',name:d.user.name||d.user.email||'Guest'};renderAll()}}).catch(()=>{});
- const me={};fetch('/api/auth/me').catch(()=>{});
 });
 </script>
 </body>
