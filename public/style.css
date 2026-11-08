@@ -1,0 +1,26 @@
+:root{--bg:#0b0f14;--card:#111827;--border:#1f2937;--text:#e5e7eb;--muted:#9ca3af;--accent:#f59e0b;--accent2:#fbbf24}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--accent2)}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.brand{font-weight:800;font-size:20px}.brand span{color:var(--accent)}
+select,button{border-radius:10px;border:1px solid var(--border);background:#1f2937;color:var(--text);padding:8px 10px}
+button{cursor:pointer;background:var(--accent);color:#111;font-weight:700;border:none}
+button.secondary{background:#1f2937;color:var(--text);border:1px solid var(--border)}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 65px)}
+.sidebar{border-right:1px solid var(--border);padding:12px;background:var(--card)}
+.sidebar h3{margin:8px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.chatItem{padding:8px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.chatItem:hover,.chatItem.active{background:#1f2937;color:var(--text)}
+main{display:flex;flex-direction:column;max-width:900px;width:100%;margin:0 auto;padding:16px}
+.messages{flex:1;display:flex;flex-direction:column;gap:12px;min-height:40vh}
+.msg{padding:12px 14px;border-radius:14px;border:1px solid var(--border);white-space:pre-wrap;word-break:break-word}
+.msg.user{background:#1f2937;margin-left:10%}
+.msg.assistant{background:#0f172a;margin-right:10%}
+.meta{font-size:12px;color:var(--muted);margin-bottom:4px}
+.composer{display:flex;gap:8px;margin-top:16px}
+textarea{flex:1;resize:vertical;min-height:54px;border-radius:12px;border:1px solid var(--border);background:#111827;color:var(--text);padding:10px;font:inherit}
+.typing{color:var(--muted);font-size:14px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:block}}
+.card{border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--card)}
+input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#1f2937;color:var(--text)}
+code{background:#1f2937;padding:2px 6px;border-radius:6px}

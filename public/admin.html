@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Crouton AI - Admin panel</title><link rel="stylesheet" href="/style.css"/></head>
+<body>
+<header><div class="brand">🛡️ Admin <span>panel</span></div><div style="margin-left:auto"><a href="/">Back to chat</a></div></header>
+<main>
+  <div class="card" id="loginCard">
+    <h2>Admin login</h2>
+    <p style="color:#9ca3af">Separate protected panel. Password is set on the server via <code>ADMIN_PASSWORD</code> and never in this file.</p>
+    <form id="loginForm">
+      <input id="password" type="password" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password"/>
+      <button type="submit" style="width:100%;margin-top:8px">Login</button>
+    </form>
+    <p id="loginError" style="color:#f87171"></p>
+  </div>
+  <div class="card" id="statsCard" style="display:none">
+    <h2>Health</h2>
+    <div id="stats"></div>
+    <h3>Security checklist</h3>
+    <ul style="color:#9ca3af;line-height:1.7">
+      <li>HTTPS in production, secrets only in server env</li>
+      <li>Rate limits and size limits enabled</li>
+      <li>No secrets or tokens in browser code</li>
+      <li>Keep Node and deps updated</li>
+    </ul>
+    <button class="secondary" id="logout">Logout</button>
+  </div>
+</main>
+<script src="/admin.js"></script>
+</body></html>

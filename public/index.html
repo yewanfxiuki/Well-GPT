@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="Crouton AI - Your own AI app with Crouton Alpha Free and free models"/>
+<title>Crouton AI - Chat</title>
+<link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+<header>
+  <div class="brand">🍔 Crouton <span>AI</span></div>
+  <label style="display:flex;align-items:center;gap:6px">Model
+    <select id="model"></select>
+  </label>
+  <label style="display:flex;align-items:center;gap:6px">Think
+    <select id="think">
+      <option value="default">Default</option>
+      <option value="medium">Medium</option>
+      <option value="max">Max</option>
+    </select>
+  </label>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="secondary" id="menuBtn">Chats</button>
+    <a href="/auth/github" role="button" class="secondary" style="text-decoration:none;padding:8px 10px;border-radius:10px;background:#1f2937;color:#e5e7eb;border:1px solid #1f2937">Sign in with GitHub</a>
+    <a href="/admin" style="padding:8px 10px">Admin panel</a>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <button id="newChat" style="width:100%">+ New chat</button>
+    <h3>Recent</h3>
+    <div id="chatList"></div>
+    <h3>Security</h3>
+    <p style="color:#9ca3af;font-size:13px;line-height:1.5">Server-side keys only, rate limits, and no code in the browser. See README for setup.</p>
+  </aside>
+  <main>
+    <div class="card" style="margin-bottom:12px">
+      <strong>Welcome to Crouton AI.</strong>
+      <div style="color:#9ca3af">Pick a free model and a think level (Default / Medium / Max), then ask anything. Chats stay in your browser.</div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="typing" id="typing"></div>
+    <form class="composer" id="form">
+      <textarea id="input" placeholder="Type your message… (Enter to send, Shift+Enter for new line)" aria-label="Message"></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
