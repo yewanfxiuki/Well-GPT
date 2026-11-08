@@ -4,54 +4,55 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>NEXUS AI CODE · Chat</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>"/>
+<meta name="description" content="NEXUS AI CODE — multi-model coding assistant"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238b9cff'/><text x='16' y='21' text-anchor='middle' font-size='14' font-weight='700' fill='%230D0F12'>N</text></svg>"/>
 <link rel="stylesheet" href="/style.css"/>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="mark">N</span><span><b>NEXUS AI CODE</b><small>Crouton assistant</small></span></div>
-    <button class="newChat" id="newChat">+ New chat</button>
+    <div class="brand"><span class="mark" aria-hidden="true">N</span><span class="brandText"><b>NEXUS AI CODE</b><small>Crouton assistant</small></span></div>
+    <button class="newChat" id="newChat" type="button">+ New chat</button>
     <input id="search" placeholder="Search conversations" aria-label="Search conversations"/>
-    <nav class="chatList" id="chatList"></nav>
+    <nav class="chatList" id="chatList" aria-label="Conversations"></nav>
     <div class="sideBottom">
       <a class="sideLink" href="https://github.com/yewanfxiuki/Well-GPT" target="_blank" rel="noopener">GitHub repository</a>
       <a class="sideLink" href="/control-center">Control Center</a>
-      <div class="userRow"><span id="userCard">Guest</span><button class="textBtn" id="themeBtn" aria-label="Theme">Theme</button></div>
+      <div class="userRow"><span id="userCard">Signing in…</span><button class="textBtn" id="themeBtn" type="button">Theme</button></div>
     </div>
   </aside>
   <div class="scrim" id="scrim" hidden></div>
 
   <main class="main">
     <header class="topbar">
-      <button class="iconBtn" id="menuBtn" aria-label="Menu">≡</button>
+      <button class="iconBtn" id="menuBtn" type="button" aria-label="Menu">≡</button>
       <div class="seg" role="tablist" aria-label="Mode">
-        <button class="segBtn active" data-mode="chat">Chat</button>
-        <button class="segBtn" data-mode="build-website">Build</button>
+        <button class="segBtn active" data-mode="chat" type="button">Chat</button>
+        <button class="segBtn" data-mode="build-website" type="button">Build</button>
       </div>
       <div class="topRight">
-        <button class="chipBtn" id="ghBtn">GitHub</button>
-        <button class="chipBtn" id="marketBtn">Models</button>
-        <button class="chipBtn" id="wsBtn">Workspace</button>
-        <button class="avatar" id="avatarBtn" aria-label="Account">G</button>
+        <button class="chipBtn" id="ghBtn" type="button">GitHub</button>
+        <button class="chipBtn" id="marketBtn" type="button">Models</button>
+        <button class="chipBtn" id="wsBtn" type="button">Workspace</button>
+        <button class="avatar" id="avatarBtn" type="button" aria-label="Account">G</button>
       </div>
     </header>
 
     <div class="toolbar">
-      <label>Model <select id="model"></select></label>
-      <label>Think <select id="think"><option value="default">Default · auto</option><option value="low">Low · fast</option><option value="medium">Medium · balanced</option><option value="high">High · deep</option><option value="max">Max · deepest</option></select></label>
+      <label>Model<select id="model"></select></label>
+      <label>Think<select id="think"><option value="default">Default · auto</option><option value="low">Low · fast</option><option value="medium">Medium · balanced</option><option value="high">High · deep</option><option value="max">Max · deepest</option></select></label>
       <label class="usageToggle"><input type="checkbox" id="usageToggle"/> Usage</label>
     </div>
 
     <section class="chatCol">
       <div class="empty" id="empty">
         <h1>NEXUS AI CODE</h1>
-        <p class="muted">Crouton assistant · streaming · persistent · mobile + desktop</p>
+        <p class="muted">Streaming · persistent · mobile + desktop</p>
         <div class="taskRow">
-          <button data-prompt="Hello! What can you do?">What can you do?</button>
-          <button data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">Build a landing page</button>
-          <button data-prompt="Build a fullstack todo app with Node server and nice HTML UI">Build a fullstack app</button>
-          <button data-prompt="Explain how GitHub connect and Workspace work in 3 bullets">How does GitHub work?</button>
+          <button type="button" data-prompt="Hello! What can you do?">What can you do?</button>
+          <button type="button" data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">Build a landing page</button>
+          <button type="button" data-prompt="Build a fullstack todo app with Node server and nice HTML UI">Build a fullstack app</button>
+          <button type="button" data-prompt="Explain how GitHub connect and Workspace work in 3 bullets">How does GitHub work?</button>
         </div>
       </div>
       <div class="messages" id="messages" aria-live="polite"></div>
@@ -59,8 +60,9 @@
     </section>
 
     <div class="composerWrap">
+      <div id="fileChip" class="fileChip" hidden><span id="fileName"></span><button id="fileClear" type="button">×</button></div>
       <form class="composer" id="form">
-        <label class="attach" title="Attach text/image file"><input id="fileInput" type="file" accept=".txt,.md,.js,.html,.css,.json,.py,.png,.jpg,.jpeg"/><span aria-hidden="true">＋</span></label>
+        <label class="attach" title="Attach a text file (≤20KB)">＋<input id="fileInput" type="file" accept=".txt,.md,.js,.html,.css,.json,.py"/></label>
         <textarea id="input" rows="1" placeholder="Message Crouton…" aria-label="Message"></textarea>
         <button class="sendBtn" id="sendBtn" type="submit" aria-label="Send">↑</button>
       </form>
@@ -69,17 +71,17 @@
   </main>
 
   <aside class="canvas" id="canvas" hidden>
-    <div class="tabs"><button class="tab active" id="tabPreview">Preview</button><button class="tab" id="tabFiles">Files</button><button id="closeCanvas" class="iconBtn" aria-label="Close">✕</button></div>
-    <div id="panePreview" class="pane"><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe></div>
-    <div id="paneFiles" class="pane" hidden><div id="filesList" class="files"></div><div class="row pad"><button id="dlBtn" class="primary">Download HTML</button><button id="copyBtn" class="ghost">Copy</button></div></div>
+    <div class="tabs"><button class="tab active" id="tabPreview" type="button">Preview</button><button class="tab" id="tabFiles" type="button">Files</button><button id="closeCanvas" class="iconBtn" type="button" aria-label="Close">✕</button></div>
+    <div id="panePreview" class="pane"><div id="previewEmpty" class="previewEmpty">No preview yet.<br/><span>Use Build mode and ask for a website — the result appears here.</span></div><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin" hidden></iframe></div>
+    <div id="paneFiles" class="pane" hidden><div id="filesList" class="files"></div><div class="row pad"><button id="dlBtn" class="primary" type="button">Download HTML</button><button id="copyBtn" class="ghost" type="button">Copy</button></div></div>
   </aside>
 </div>
 
-<div class="modalWrap" id="loginModal" hidden><div class="modal"><div class="modalHead"><h2>Sign in</h2><button class="iconBtn" id="closeLogin">✕</button></div><p class="muted small">Guest is automatic. More options:</p><div class="loginOpts"><button class="opt primary" id="guestBtn">Continue as Guest</button><a class="opt" href="/auth/github">GitHub</a><a class="opt" href="/auth/google">Google</a><a class="opt" href="/control-center">Control Center</a></div><form id="emailForm" class="row"><input id="email" type="email" placeholder="you@example.com" required/><button class="primary">Sign in</button></form><p class="muted small" id="emailMsg"></p></div></div>
-<div class="modalWrap" id="ghModal" hidden><div class="modal"><div class="modalHead"><h2>GitHub</h2><button class="iconBtn" id="closeGh">✕</button></div><div id="ghBody"></div></div></div>
-<div class="modalWrap" id="marketModal" hidden><div class="modal wide"><div class="modalHead"><h2>Model marketplace</h2><button class="iconBtn" id="closeMarket">✕</button></div><p class="muted small">Free-first · verified $0 IDs. Quotas apply — never unlimited.</p><div class="filters"><button class="filter active" data-f="all">All</button><button class="filter" data-f="free">Free</button><button class="filter" data-f="coding">Coding</button><button class="filter" data-f="reasoning">Reasoning</button></div><div id="marketList" class="marketList"></div></div></div>
-<div class="modalWrap" id="wsModal" hidden><div class="modal"><div class="modalHead"><h2>Workspace</h2><button class="iconBtn" id="closeWs">✕</button></div><p class="muted small">Isolated <code>workspace/</code> · sign-in required · path-safe.</p><div class="row"><button class="ghost" id="wsList">List</button><input id="wsPath" placeholder="hello.js"/><button class="ghost" id="wsRead">Read</button></div><div class="row" style="margin-top:6px"><input id="wsContent" placeholder="content…"/><button class="primary" id="wsWrite">Write</button><button class="ghost" id="wsCheck">Check JS</button></div><pre id="wsOut" class="wsOut">—</pre></div></div>
-
+<div class="modalWrap" id="loginModal" hidden><div class="modal"><div class="modalHead"><h2>Sign in</h2><button class="iconBtn" id="closeLogin" type="button">✕</button></div><p class="muted small">Guest is automatic — no account needed to chat.</p><div class="loginOpts"><button class="opt primary" id="guestBtn" type="button">Continue as Guest</button><a class="opt" href="/auth/github">GitHub</a><a class="opt" href="/auth/google">Google</a><a class="opt" href="/control-center">Control Center</a></div><form id="emailForm" class="row"><input id="email" type="email" placeholder="you@example.com" required/><button class="primary" type="submit">Sign in</button></form><p class="muted small" id="emailMsg">Demo email sign-in — no mail is sent.</p></div></div>
+<div class="modalWrap" id="ghModal" hidden><div class="modal"><div class="modalHead"><h2>GitHub</h2><button class="iconBtn" id="closeGh" type="button">✕</button></div><div id="ghBody"></div></div></div>
+<div class="modalWrap" id="marketModal" hidden><div class="modal wide"><div class="modalHead"><h2>Model marketplace</h2><button class="iconBtn" id="closeMarket" type="button">✕</button></div><p class="muted small">Free-first · verified $0 IDs from the OpenCode catalog. Quotas apply — never unlimited.</p><div class="filters"><button class="filter active" data-f="all" type="button">All</button><button class="filter" data-f="free" type="button">Free</button><button class="filter" data-f="coding" type="button">Coding</button><button class="filter" data-f="reasoning" type="button">Reasoning</button></div><div id="marketList" class="marketList"></div></div></div>
+<div class="modalWrap" id="wsModal" hidden><div class="modal"><div class="modalHead"><h2>Workspace</h2><button class="iconBtn" id="closeWs" type="button">✕</button></div><p class="muted small">Isolated <code>workspace/</code> · sign-in required · path-safe · 50KB max.</p><div class="row"><button class="ghost" id="wsList" type="button">List</button><input id="wsPath" placeholder="hello.js"/><button class="ghost" id="wsRead" type="button">Read</button></div><div class="row" style="margin-top:6px"><input id="wsContent" placeholder="content…"/><button class="primary" id="wsWrite" type="button">Write</button><button class="ghost" id="wsCheck" type="button">Check JS</button></div><pre id="wsOut" class="wsOut">—</pre></div></div>
+<div id="toast" class="toast" hidden></div>
 <script src="/app.js"></script>
 </body>
 </html>
