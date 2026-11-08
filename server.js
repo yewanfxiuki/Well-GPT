@@ -31,6 +31,7 @@ const ALLOWED_MODELS = [
   'opencode/big-pickle'
 ];
 const ALLOWED_THINK = ['default', 'medium', 'max'];
+const ALLOWED_MODES = ['chat', 'build-website', 'build-fullstack'];
 const THINK_VARIANT = { default: 'medium', medium: 'high', max: 'max' };
 
 const rateMap = new Map();
@@ -137,11 +138,15 @@ function createUserSession(provider, info) {
   return id;
 }
 
-// Think-level system prompts for live model
-function systemPrompt(think) {
-  if (think === 'max') return 'You are Crouton Alpha, a thoughtful AI. Think step-by-step, be thorough and clear.';
-  if (think === 'medium') return 'You are Crouton Alpha, a helpful AI. Give a careful, balanced, well-reasoned answer.';
-  return 'You are Crouton Alpha, a fast and helpful AI. Give a clear, concise answer.';
+function systemPrompt(think, mode) {
+  const base = think === 'max'
+    ? 'You are Crouton Alpha, a thoughtful AI. Think step-by-step, be thorough and clear.'
+    : think === 'medium'
+    ? 'You are Crouton Alpha, a helpful AI. Give a careful, balanced, well-reasoned answer.'
+    : 'You are Crouton Alpha, a fast and helpful AI. Give a clear, concise answer.';
+  if (mode === 'build-website') return base + ' MODE: Build website. ALWAYS reply with a short intro line then ONE complete single-file HTML page inside a ```html code block. Use inline CSS+JS, modern responsive design, no external files. No explanations outside the block.';
+  if (mode === 'build-fullstack') return base + ' MODE: Build fullstack app. Reply with intro then file blocks like ```html, ```js, ```css with clear filenames (e.g. // server.js). Keep it runnable: Node server + static HTML. No external secrets.';
+  return base;
 }
 
 async function handleChat(req, res) {
@@ -158,6 +163,7 @@ async function handleChat(req, res) {
   const messages = Array.isArray(body.messages) ? body.messages.slice(-30) : [];
   const model = ALLOWED_MODELS.includes(body.model) ? body.model : 'opencode/crouton-alpha-free';
   const think = ALLOWED_THINK.includes(body.think) ? body.think : 'default';
+  const mode = ALLOWED_MODES.includes(body.mode) ? body.mode : 'chat';
   const clean = [];
   for (const m of messages) {
     if (!m || typeof m.content !== 'string') continue;
@@ -169,7 +175,7 @@ async function handleChat(req, res) {
     return res.end(JSON.stringify({ error: 'messages required' }));
   }
   stats.chatRequests++;
-  const liveMessages = [{ role: 'system', content: systemPrompt(think) }, ...clean];
+  const liveMessages = [{ role: 'system', content: systemPrompt(think, mode) }, ...clean];
 
   // 1) Custom upstream via env (true Crouton / OpenAI-compat). Keys stay server-side.
   const base = process.env.OPENCODE_API_BASE;
@@ -241,6 +247,11 @@ const server = http.createServer(async (req, res) => {
     if (method === 'GET' && urlPath === '/api/models') {
       res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
       return res.end(JSON.stringify({ models: ALLOWED_MODELS, thinkLevels: ALLOWED_THINK, variantMap: THINK_VARIANT }));
+    }
+    if (method === 'GET' && urlPath === '/api/github/status') {
+      const connected = Boolean(process.env.GITHUB_CLIENT_ID || process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
+      res.writeHead(200, { 'Content-Type': 'application/json', ...securityHeaders() });
+      return res.end(JSON.stringify({ connected, repo: 'yewanfxiuki/Well-GPT' }));
     }
     if (method === 'POST' && urlPath === '/api/chat') return handleChat(req, res);
 

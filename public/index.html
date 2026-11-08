@@ -3,71 +3,101 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="description" content="Crouton AI - Live chat with Crouton Alpha Free and all OpenCode free models"/>
-<title>Crouton AI - Chat</title>
+<meta name="description" content="Well-GPT — ChatGPT + OpenCode style AI that connects to GitHub and builds websites & fullstack apps"/>
+<title>Well-GPT · Chat</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>"/>
 <link rel="stylesheet" href="/style.css"/>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">🍔 Crouton <span>AI</span></div>
-  <div class="controls">
-    <label class="picker"><span>Model</span><select id="model" aria-label="Model"></select></label>
-    <label class="picker"><span>Think</span><select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select></label>
-  </div>
-  <div class="top-actions">
-    <button class="ghost" id="themeBtn" title="Toggle light/dark">◐</button>
-    <button class="ghost" id="menuBtn">☰ Chats</button>
-    <span id="userChip" class="chip" hidden></span>
-    <button id="loginBtn" class="primary">Sign in</button>
-    <a class="adminLink" href="/admin">Admin</a>
-  </div>
-</header>
-<div class="layout">
+<div class="app">
   <aside class="sidebar" id="sidebar">
-    <button id="newChat" class="primary block">+ New chat</button>
-    <h3>Recent</h3>
-    <div id="chatList" class="chatList"></div>
-    <h3>Tips</h3>
-    <p class="muted small">Enter = send · Shift+Enter = new line<br/><br/>Live free replies (no key). Rate ~30s/IP on free tier — wait a few seconds between asks if busy.</p>
+    <div class="sideTop">
+      <div class="logo">🍔 <b>Well-GPT</b><span class="ver">v2</span></div>
+      <button class="newChat" id="newChat">＋ New chat</button>
+      <input id="search" placeholder="Search chats" aria-label="Search chats"/>
+    </div>
+    <div class="chatList" id="chatList"></div>
+    <div class="sideBottom">
+      <a class="sideLink" href="https://github.com/yewanfxiuki/Well-GPT" target="_blank" rel="noopener">🐙 GitHub repo</a>
+      <a class="sideLink" href="/admin">🛡️ Admin panel</a>
+      <div class="userCard" id="userCard">Signing in as guest…</div>
+    </div>
   </aside>
+
   <main class="main">
-    <section class="hero card">
-      <h1>Ask anything. <span class="grad">Live.</span></h1>
-      <p class="muted">Crouton Alpha Free by default, every free model ready, think levels that match how deep you want it to go.</p>
-      <div class="pills"><span>Free</span><span>Live</span><span>No key needed</span><span>Server-side only</span></div>
-    </section>
-    <div class="messages" id="messages" aria-live="polite"></div>
-    <div class="typing" id="typing"></div>
-    <form class="composer card" id="form">
-      <textarea id="input" rows="2" placeholder="Message Crouton AI…" aria-label="Message"></textarea>
-      <button type="submit" class="primary">Send →</button>
-    </form>
-    <p class="muted center small">Crouton AI can be wrong. Server holds the keys — never in browser code.</p>
+    <header class="topbar">
+      <button class="iconBtn onlyMobile" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="selectors">
+        <select id="model" aria-label="Model"></select>
+        <select id="think" aria-label="Think level"><option value="default">Default · fast</option><option value="medium">Medium · balanced</option><option value="max">Max · deepest</option></select>
+        <select id="mode" aria-label="Mode"><option value="chat">Chat</option><option value="build-website">🌐 Build website</option><option value="build-fullstack">🛠️ Build fullstack</option></select>
+      </div>
+      <div class="topRight">
+        <button id="ghBtn" class="ghBtn" title="GitHub connection">◦ Connect GitHub</button>
+        <button class="iconBtn" id="themeBtn" aria-label="Theme">◐</button>
+        <button class="iconBtn" id="canvasBtn" aria-label="Preview" title="Preview">▣</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="chatCol">
+        <div class="empty" id="empty">
+          <div class="emptyLogo">🍔</div>
+          <h1>What will you build today?</h1>
+          <p class="muted">Chat, build a website, or scaffold a fullstack app — live, free, and connected to GitHub.</p>
+          <div class="suggest">
+            <button data-prompt="Build a modern landing page for a coffee shop with hero, menu and contact">🌐 <b>Landing page</b><span>Build a website</span></button>
+            <button data-prompt="Build a fullstack todo app with Node server and a nice HTML UI">🛠️ <b>Fullstack todo</b><span>Node + HTML</span></button>
+            <button data-prompt="Hello! Explain how Well-GPT connects to GitHub in one short paragraph">🐙 <b>GitHub</b><span>How it connects</span></button>
+          </div>
+        </div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+        <div class="typing" id="typing"></div>
+      </section>
+
+      <aside class="canvas" id="canvas" hidden>
+        <div class="tabs"><button class="tab active" id="tabPreview">Preview</button><button class="tab" id="tabFiles">Files</button><button class="iconBtn" id="closeCanvas" aria-label="Close preview">✕</button></div>
+        <div id="panePreview" class="pane"><iframe id="previewFrame" title="Preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe><p class="muted small pad">Live preview of the last generated HTML. Sandboxed for safety.</p></div>
+        <div id="paneFiles" class="pane" hidden>
+          <div id="filesList" class="files"></div>
+          <div class="row pad"><button id="dlBtn" class="primary">Download HTML</button><button id="copyBtn" class="ghost">Copy code</button></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="composerWrap">
+      <form class="composer" id="form">
+        <button type="button" class="iconBtn" id="attachBtn" title="Attach" aria-label="Attach">📎</button>
+        <textarea id="input" rows="1" placeholder="Message Well-GPT…  (Enter ↵ · Shift+Enter new line)" aria-label="Message"></textarea>
+        <button type="submit" class="sendBtn" aria-label="Send">↑</button>
+      </form>
+      <p class="fine">Well-GPT can be wrong. Live free replies · no key needed · server holds the keys.</p>
+    </div>
   </main>
 </div>
 
 <div class="modalWrap" id="loginModal" hidden>
-  <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-    <div class="modalHead">
-      <h2 id="loginTitle">Sign in to Well-GPT</h2>
-      <button class="ghost" id="closeLogin" aria-label="Close">✕</button>
-    </div>
-    <p class="muted small">Pick any option. Chats stay in this browser. No passwords stored.</p>
+  <div class="modal card" role="dialog" aria-modal="true">
+    <div class="modalHead"><h2>Sign in</h2><button class="iconBtn" id="closeLogin" aria-label="Close">✕</button></div>
+    <p class="muted small">Pick any option — Guest is instant and recommended.</p>
     <div class="loginOpts">
       <button class="opt primary" id="guestBtn">🙋 Continue as Guest<br/><span class="small">Instant, no account</span></button>
-      <a class="opt" href="/auth/github">🐙 Sign in with GitHub<br/><span class="small">Setup in README if not enabled</span></a>
-      <a class="opt" href="/auth/google">G &nbsp; Sign in with Google<br/><span class="small">Setup in README if not enabled</span></a>
-      <a class="opt" href="/admin">🛡️ Admin panel<br/><span class="small">Separate, password protected</span></a>
+      <a class="opt" href="/auth/github">🐙 Sign in with GitHub<br/><span class="small">Setup via OAuth if needed</span></a>
+      <a class="opt" href="/auth/google">G &nbsp; Sign in with Google</a>
+      <a class="opt" href="/admin">🛡️ Admin panel</a>
     </div>
     <form id="emailForm" class="emailForm">
-      <label for="email">Email magic link (demo)</label>
-      <div class="row">
-        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required/>
-        <button type="submit" class="primary">Sign in</button>
-      </div>
+      <label for="email">Email</label>
+      <div class="row"><input id="email" type="email" placeholder="you@example.com" autocomplete="email" required/><button type="submit" class="primary">Sign in</button></div>
       <p class="muted small" id="emailMsg"></p>
     </form>
+  </div>
+</div>
+
+<div class="modalWrap" id="ghModal" hidden>
+  <div class="modal card" role="dialog" aria-modal="true">
+    <div class="modalHead"><h2>Connect GitHub</h2><button class="iconBtn" id="closeGh" aria-label="Close">✕</button></div>
+    <div id="ghBody"></div>
   </div>
 </div>
 
